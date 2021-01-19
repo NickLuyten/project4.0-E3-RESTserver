@@ -9,6 +9,7 @@ module.exports = (Sequelize, sequelize) => {
       authentication: {
         type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
       },
     });
   

@@ -39,6 +39,8 @@ app.get("/", (req, res) => {
 // First User, other tables may depend on this table
 require("./app/routes/user.routes")(app);
 require("./app/routes/vendingMachine.routes")(app);
+require("./app/routes/authentication.routes")(app);
+
 // require("./app/routes/table.routes")(app);
 // require("./app/routes/team.routes")(app);
 // require("./app/routes/match.routes")(app);
