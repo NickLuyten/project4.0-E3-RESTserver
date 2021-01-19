@@ -8,6 +8,9 @@ const db = {};
 db.url = dbConfig.url;
 
 db.user = require("./user.model.js")(Sequelize, sequelize);
+db.authentication = require("./authentication.model")(Sequelize, sequelize);
+db.vendingMachine = require("./vendingMachine.model")(Sequelize, sequelize);
+
 // db.type = require("./type.model.js")(Sequelize, sequelize);
 // db.team = require('./team.model.js')(mongoose);
 // db.table = require('./table.model.js')(mongoose);

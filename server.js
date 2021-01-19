@@ -38,6 +38,9 @@ app.get("/", (req, res) => {
 
 // First User, other tables may depend on this table
 require("./app/routes/user.routes")(app);
+require("./app/routes/vendingMachine.routes")(app);
+require("./app/routes/authentication.routes")(app);
+
 // require("./app/routes/table.routes")(app);
 // require("./app/routes/team.routes")(app);
 // require("./app/routes/match.routes")(app);
@@ -46,6 +49,11 @@ require("./app/routes/user.routes")(app);
 
 // db.user.belongsTo(db.type);
 // db.type.hasMany(db.user);
+db.user.belongsToMany(db.vendingMachine, {
+  through: db.authentication,
+  foreignKey: { name: "userId", allowNull: false },
+});
+db.vendingMachine.belongsToMany(db.user, { through: db.authentication });
 
 sequelize
   .sync({ force: true })
