@@ -68,7 +68,7 @@ db.vendingMachine.belongsToMany(db.user, {
   foreignKey: { name: "vendingMachineId", allowNull: false },
 });
 sequelize
-  .sync()
+  .sync({ force: true })
   .then((result) => {
     // set port, listen for requests
     console.log("connected to the database");

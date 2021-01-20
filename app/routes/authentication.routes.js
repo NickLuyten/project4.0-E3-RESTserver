@@ -7,7 +7,11 @@ module.exports = (app) => {
   router.post("/", authJwt.verifyToken, authentication.create);
 
   // Retrieve all users
-  router.get("/all", authJwt.verifyToken, authentication.findAll);
+  router.get(
+    "/all",
+    [authJwt.verifyToken, authJwt.isAdmin],
+    authentication.findAll
+  );
 
   // Retrieve a single user with id
   router.get("/:id", authJwt.verifyToken, authentication.findOne);
@@ -20,10 +24,18 @@ module.exports = (app) => {
   );
 
   // Update a single user with id
-  router.put("/:id", authJwt.verifyToken, authentication.update);
+  router.put(
+    "/:id",
+    [authJwt.verifyToken, authJwt.isAdmin],
+    authentication.update
+  );
 
   // Delete a user with id
-  router.delete("/:id", authJwt.verifyToken, authentication.delete);
+  router.delete(
+    "/:id",
+    [authJwt.verifyToken, authJwt.isAdmin],
+    authentication.delete
+  );
 
   app.use("/api/authentication", router);
 };
