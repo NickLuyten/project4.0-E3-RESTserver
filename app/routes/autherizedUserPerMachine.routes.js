@@ -8,7 +8,12 @@ module.exports = (app) => {
 
   // Retrieve all users
   router.get("/all", authJwt.verifyToken, autherizedUserPerMachine.findAll);
-
+  // Retrieve all users for a vending machine
+  router.get(
+    "/vendingmachine/:id",
+    authJwt.verifyToken,
+    autherizedUserPerMachine.findAllAuthenticatedUsersForVendingMachine
+  );
   // Retrieve a single user with id
   router.get("/:id", authJwt.verifyToken, autherizedUserPerMachine.findOne);
 

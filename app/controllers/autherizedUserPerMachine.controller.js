@@ -97,6 +97,30 @@ exports.findAll = (req, res) => {
     });
 };
 
+// Find all users
+exports.findAllAuthenticatedUsersForVendingMachine = (req, res) => {
+  const id = req.params.id;
+  AutherizedUserPerMachine.findAll({
+    where: {
+      vendingMachineId: id,
+    },
+  })
+    .then((autherizedUserPerMachine) => {
+      if (!autherizedUserPerMachine)
+        return res
+          .status(400)
+          .send({ message: "No AutherizedUserPerMachine found" });
+      return res.send(
+        returnAutherizedUserPerMachines(autherizedUserPerMachine)
+      );
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message: err.message || "Error retrieving AutherizedUserPerMachine",
+      });
+    });
+};
+
 // Delete a user with the specified id in the request
 exports.delete = (req, res) => {
   const id = req.params.id;
