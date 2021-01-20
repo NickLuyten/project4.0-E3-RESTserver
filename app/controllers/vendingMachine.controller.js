@@ -1,6 +1,8 @@
 const db = require("./../models/index");
 const VendingMachine = db.vendingMachine;
 const Authentication = db.authentication;
+const Alert = db.alert;
+const alertTypes = require("./../const/alertTypes");
 //helper function to validate userfields
 validateVendingMachineFields = (req, isRequired) => {
   // Validate request
@@ -231,6 +233,28 @@ exports.update = async (req, res) => {
             message: `Cannot updated vending machine with id=${id}`,
           });
         } else {
+          if (updatedVendingMachine.stock < 0) {
+            console.log("alert melding ");
+            vendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "out of stock",
+            });
+          } else if (updatedVendingMachine.stock < 4) {
+            console.log("alert melding ");
+            vendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "stock is running low",
+            });
+          } else if (
+            updatedVendingMachine.stock ===
+            updatedVendingMachine.maxNumberOfProducts
+          ) {
+            console.log("alert melding ");
+            vendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "stock is full",
+            });
+          }
           return res.send(returnVendingMachine(updatedVendingMachine));
         }
       });
@@ -265,6 +289,13 @@ exports.handgelAfhalen = async (req, res) => {
               });
             } else {
               if (vendingMachine.stock > 0) {
+                if (vendingMachine.stock < 4) {
+                  console.log("alert melding ");
+                  vendingMachine.createAlert({
+                    type: alertTypes.stock,
+                    melding: "stock is running low",
+                  });
+                }
                 vendingMachine.stock = vendingMachine.stock - 1;
                 vendingMachine.save().then((updatedVendingMachine) => {
                   if (!updatedVendingMachine) {
@@ -287,6 +318,10 @@ exports.handgelAfhalen = async (req, res) => {
                   }
                 });
               } else {
+                vendingMachine.createAlert({
+                  type: alertTypes.stock,
+                  melding: "out of stock",
+                });
                 return res.status(400).send({
                   message: `the vending machine with id=${id} is out of stock.`,
                 });
@@ -307,6 +342,38 @@ exports.handgelAfhalen = async (req, res) => {
           uuid +
           " error : " +
           err,
+      });
+    });
+};
+
+//handgelafhalen
+exports.handgelbijvullen = async (req, res) => {
+  const id = req.params.id;
+  VendingMachine.findByPk(id)
+    .then((vendingMachine) => {
+      if (!vendingMachine) {
+        return res.status(400).send({
+          message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
+        });
+      } else {
+        vendingMachine.stock = vendingMachine.maxNumberOfProducts;
+        vendingMachine.save().then((updatedVendingMachine) => {
+          if (!updatedVendingMachine) {
+            return res.status(400).send({
+              message: `Cannot updated vending machine with id=${id}`,
+            });
+          } else {
+            updatedVendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "stock is refild",
+            });
+          }
+        });
+      }
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message: err.message || "Error updating stock vending machines",
       });
     });
 };

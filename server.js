@@ -55,6 +55,9 @@ db.user.belongsToMany(db.vendingMachine, {
 });
 db.vendingMachine.belongsToMany(db.user, { through: db.authentication });
 
+db.alert.belongsTo(db.vendingMachine);
+db.vendingMachine.hasMany(db.alert);
+
 sequelize
   .sync()
   .then((result) => {

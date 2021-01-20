@@ -42,22 +42,33 @@ returnAuthentications = (data) => {
 // Create and Save a new user
 exports.create = (req, res) => {
   console.log("create function");
-  let authenticationString = uuidv4();
-  let authentication = new Authentication({
-    userId: req.authUser.id,
-    authentication: authenticationString,
-  });
-  console.log(authentication);
-  authentication
-    .save()
-    .then((data) => {
-      return res.send(returnAuthentication(data));
-    })
-    .catch(() => {
-      return res.status(500).send({
-        message: "Error creating authentication string ",
+  Authentication.findOne({
+    where: {
+      userId: req.authUser.id,
+      vendingMachineId: null,
+    },
+  }).then((authenticationFound) => {
+    if (!authenticationFound) {
+      let authenticationString = uuidv4();
+      let authentication = new Authentication({
+        userId: req.authUser.id,
+        authentication: authenticationString,
       });
-    });
+      console.log(authentication);
+      authentication
+        .save()
+        .then((data) => {
+          return res.send(returnAuthentication(data));
+        })
+        .catch(() => {
+          return res.status(500).send({
+            message: "Error creating authentication string ",
+          });
+        });
+    } else {
+      return res.send(returnAuthentication(authenticationFound));
+    }
+  });
 };
 
 // Find a single user with an id

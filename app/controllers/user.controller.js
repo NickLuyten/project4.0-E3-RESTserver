@@ -260,7 +260,9 @@ exports.update = async (req, res) => {
   if (!req.body) {
     return res.status(400).send({ message: "geen data?" });
   }
-
+  if (req.body.password) {
+    req.body.password = bcrypt.hashSync(req.body.password, 8);
+  }
   // let user = req.body;
 
   // if (req.files) {
