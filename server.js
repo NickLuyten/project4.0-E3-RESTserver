@@ -56,7 +56,7 @@ db.user.belongsToMany(db.vendingMachine, {
 db.vendingMachine.belongsToMany(db.user, { through: db.authentication });
 
 sequelize
-  .sync({ force: true })
+  .sync()
   .then((result) => {
     // set port, listen for requests
     console.log("connected to the database");

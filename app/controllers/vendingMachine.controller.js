@@ -1,6 +1,6 @@
 const db = require("./../models/index");
 const VendingMachine = db.vendingMachine;
-
+const Authentication = db.authentication;
 //helper function to validate userfields
 validateVendingMachineFields = (req, isRequired) => {
   // Validate request
@@ -240,34 +240,73 @@ exports.update = async (req, res) => {
 //handgelafhalen
 exports.handgelAfhalen = async (req, res) => {
   const id = req.params.id;
-  VendingMachine.findByPk(id)
-    .then((vendingMachine) => {
-      if (!vendingMachine) {
+
+  const uuid = req.body.authentication;
+  console.log("uuid");
+  console.log(uuid);
+  Authentication.findOne({
+    where: {
+      authentication: uuid,
+      vendingMachineId: null,
+    },
+  })
+    .then((authentication) => {
+      if (!authentication)
         return res.status(400).send({
-          message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
+          message:
+            "Not found authentication with authentication string " + uuid,
         });
-      } else {
-        if (vendingMachine.stock > 0) {
-          vendingMachine.stock = vendingMachine.stock - 1;
-          vendingMachine.save().then((updatedVendingMachine) => {
-            if (!updatedVendingMachine) {
+      else {
+        VendingMachine.findByPk(id)
+          .then((vendingMachine) => {
+            if (!vendingMachine) {
               return res.status(400).send({
-                message: `Cannot updated vending machine with id=${id}`,
+                message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
               });
             } else {
-              return res.send(returnVendingMachine(updatedVendingMachine));
+              if (vendingMachine.stock > 0) {
+                vendingMachine.stock = vendingMachine.stock - 1;
+                vendingMachine.save().then((updatedVendingMachine) => {
+                  if (!updatedVendingMachine) {
+                    return res.status(400).send({
+                      message: `Cannot updated vending machine with id=${id}`,
+                    });
+                  } else {
+                    authentication.vendingMachineId = vendingMachine.id;
+                    authentication.save().then((data) => {
+                      if (!data) {
+                        return res.status(400).send({
+                          message: `Cannot updated vending machine with id=${id}`,
+                        });
+                      } else {
+                        return res.send(
+                          returnVendingMachine(updatedVendingMachine)
+                        );
+                      }
+                    });
+                  }
+                });
+              } else {
+                return res.status(400).send({
+                  message: `the vending machine with id=${id} is out of stock.`,
+                });
+              }
             }
+          })
+          .catch((err) => {
+            return res.status(500).send({
+              message: err.message || "Error updating stock vending machines",
+            });
           });
-        } else {
-          return res.status(400).send({
-            message: `the vending machine with id=${id} is out of stock.`,
-          });
-        }
       }
     })
     .catch((err) => {
       return res.status(500).send({
-        message: err.message || "Error updating stock vending machines",
+        message:
+          "Error retrieving authentication string with id=" +
+          uuid +
+          " error : " +
+          err,
       });
     });
 };
