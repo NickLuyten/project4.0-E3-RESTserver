@@ -33,6 +33,7 @@ module.exports = (app) => {
 
   //handgel afnemen
   router.put("/handgelAfnemen/:id", vendingMachine.handgelAfhalen);
+  router.put("/handgelBijVullen/:id", vendingMachine.handgelbijvullen);
 
   // Delete a user with id
   router.delete(
