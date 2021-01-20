@@ -10,13 +10,13 @@ module.exports = (app) => {
   router.get("/all", authJwt.verifyToken, vendingMachine.findAll);
 
   // Retrieve a single user with id
-  router.get("/:id", authJwt.verifyToken, vendingMachine.findOne);
+  router.get("/:id", vendingMachine.findOne);
 
   // Update a single user with id
   router.put("/:id", authJwt.verifyToken, vendingMachine.update);
 
   //handgel afnemen
-  router.put("/handgelAfnemen/:id", authJwt.verifyToken, vendingMachine.handgelAfhalen);
+  router.put("/handgelAfnemen/:id", vendingMachine.handgelAfhalen);
 
   // Delete a user with id
   router.delete("/:id", authJwt.verifyToken, vendingMachine.delete);
