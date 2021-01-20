@@ -408,19 +408,33 @@ exports.handgelbijvullen = async (req, res) => {
           message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
         });
       } else {
+        console.log("bijvullen");
         vendingMachine.stock = vendingMachine.maxNumberOfProducts;
-        vendingMachine.save().then((updatedVendingMachine) => {
-          if (!updatedVendingMachine) {
-            return res.status(400).send({
-              message: `Cannot updated vending machine with id=${id}`,
+        vendingMachine
+          .save()
+          .then((updatedVendingMachine) => {
+            console.log("saved");
+            if (!updatedVendingMachine) {
+              return res.status(400).send({
+                message: `Cannot updated vending machine with id=${id}`,
+              });
+            } else {
+              updatedVendingMachine
+                .createAlert({
+                  type: alertTypes.stock,
+                  melding: "stock is refild",
+                })
+                .then((alertCreated) => {
+                  console.log("allert");
+                  return res.send(returnVendingMachine(updatedVendingMachine));
+                });
+            }
+          })
+          .catch((err) => {
+            return res.status(500).send({
+              message: err || "Error updating stock vending machines",
             });
-          } else {
-            updatedVendingMachine.createAlert({
-              type: alertTypes.stock,
-              melding: "stock is refild",
-            });
-          }
-        });
+          });
       }
     })
     .catch((err) => {
