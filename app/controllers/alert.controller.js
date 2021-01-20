@@ -1,5 +1,6 @@
 const db = require("./../models/index");
-const alert = db.alert;
+const Alert = db.alert;
+const alertTypes = require("./../const/alertTypes");
 
 returnAlert = (data) => {
   return {
@@ -23,12 +24,33 @@ returnAlerts = (data) => {
   };
 };
 
+// Create and Save a new user
+exports.machineMishandeld = (req, res) => {
+  console.log("create function alert");
+  const id = req.params.id;
+
+  let alert = new Alert({
+    type: alertTypes.machineAbuse,
+    melding: "de machine wordt misbruikt",
+    vendingMachineId: id,
+  });
+  console.log(alert);
+  alert
+    .save()
+    .then((data) => {
+      return res.send(returnAlert(data));
+    })
+    .catch(() => {
+      return res.status(500).send({
+        message: "Error creating alert ",
+      });
+    });
+};
 // Find a single user with an id
 exports.findOne = (req, res) => {
   const id = req.params.id;
 
-  alert
-    .findByPk(id)
+  Alert.findByPk(id)
     .then((data) => {
       if (!data)
         return res
@@ -60,29 +82,29 @@ exports.findAll = (req, res) => {
     });
 };
 // Update a user
-exports.update = async (req, res) => {
-  if (!req.body) {
-    return res.status(400).send({ message: "geen data?" });
-  }
-  const id = req.params.id;
-  Alert.findByPk(id).then((alert) => {
-    if (!authentication) {
-      return res.status(400).send({
-        message: `Cannot get alert with id=${id}. Maybe alert string was not found!`,
-      });
-    } else {
-      alert.update(req.body).then((updatedAlert) => {
-        if (!updatedAlert) {
-          return res.status(400).send({
-            message: `Cannot updated alert with id=${id}`,
-          });
-        } else {
-          return res.send(returnAlert(updatedAlert));
-        }
-      });
-    }
-  });
-};
+// exports.update = async (req, res) => {
+//   if (!req.body) {
+//     return res.status(400).send({ message: "geen data?" });
+//   }
+//   const id = req.params.id;
+//   Alert.findByPk(id).then((alert) => {
+//     if (!authentication) {
+//       return res.status(400).send({
+//         message: `Cannot get alert with id=${id}. Maybe alert string was not found!`,
+//       });
+//     } else {
+//       alert.update(req.body).then((updatedAlert) => {
+//         if (!updatedAlert) {
+//           return res.status(400).send({
+//             message: `Cannot updated alert with id=${id}`,
+//           });
+//         } else {
+//           return res.send(returnAlert(updatedAlert));
+//         }
+//       });
+//     }
+//   });
+// };
 // Delete a user with the specified id in the request
 exports.delete = (req, res) => {
   const id = req.params.id;
