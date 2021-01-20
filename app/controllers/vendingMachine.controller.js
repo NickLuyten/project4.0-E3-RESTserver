@@ -304,6 +304,7 @@ exports.handgelAfhalen = async (req, res) => {
             vendingMachineId: id,
           },
         }).then((userAutherizedForVendingmachine) => {
+          console.log("userAutherizedForVendingmachine");
           console.log(userAutherizedForVendingmachine);
           if (!userAutherizedForVendingmachine) {
             return res.status(400).send({
@@ -312,6 +313,8 @@ exports.handgelAfhalen = async (req, res) => {
           } else {
             VendingMachine.findByPk(id)
               .then((vendingMachine) => {
+                console.log("vendingMachine");
+                console.log(vendingMachine);
                 if (!vendingMachine) {
                   return res.status(400).send({
                     message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
@@ -327,23 +330,40 @@ exports.handgelAfhalen = async (req, res) => {
                     }
                     vendingMachine.stock = vendingMachine.stock - 1;
                     vendingMachine.save().then((updatedVendingMachine) => {
+                      console.log("updatedVendingMachine");
+                      console.log(updatedVendingMachine);
                       if (!updatedVendingMachine) {
                         return res.status(400).send({
                           message: `Cannot updated vending machine with id=${id}`,
                         });
                       } else {
-                        authentication.vendingMachineId = vendingMachine.id;
-                        authentication.save().then((data) => {
-                          if (!data) {
-                            return res.status(400).send({
-                              message: `Cannot updated vending machine with id=${id}`,
+                        console.log("authentication");
+                        console.log(authentication);
+                        console.log(authentication.vendingMachineId);
+                        console.log(updatedVendingMachine.id);
+                        authentication.vendingMachineId =
+                          updatedVendingMachine.id;
+                        authentication
+                          .save()
+                          .then((data) => {
+                            console.log("authentication");
+                            console.log(authentication);
+                            if (!data) {
+                              return res.status(400).send({
+                                message: `Cannot updated vending machine with id=${id}`,
+                              });
+                            } else {
+                              return res.send(
+                                returnVendingMachine(updatedVendingMachine)
+                              );
+                            }
+                          })
+                          .catch((err) => {
+                            return res.status(500).send({
+                              message:
+                                err || "Error updating stock vending machines",
                             });
-                          } else {
-                            return res.send(
-                              returnVendingMachine(updatedVendingMachine)
-                            );
-                          }
-                        });
+                          });
                       }
                     });
                   } else {

@@ -51,11 +51,19 @@ require("./app/routes/autherizedUserPerMachine.routes")(app);
 
 // db.user.belongsTo(db.type);
 // db.type.hasMany(db.user);
-db.user.belongsToMany(db.vendingMachine, {
-  through: db.authentication,
-  foreignKey: { name: "userId", allowNull: false },
-});
-db.vendingMachine.belongsToMany(db.user, { through: db.authentication });
+db.authentication.belongsTo(db.user);
+db.authentication.belongsTo(db.vendingMachine);
+
+// db.user.belongsToMany(db.vendingMachine, {
+//   through: db.authentication,
+//   foreignKey: { name: "userId", allowNull: false, unique: false },
+//   unique: false,
+// });
+// db.vendingMachine.belongsToMany(db.user, {
+//   through: db.authentication,
+//   foreignKey: { name: "vendingMachineId", allowNull: true, unique: false },
+//   unique: false,
+// });
 
 db.alert.belongsTo(db.vendingMachine);
 db.vendingMachine.hasMany(db.alert);
