@@ -78,6 +78,8 @@ createToken = (user) => {
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
+      email: user.email,
+      admin: user.admin,
     },
     config.secret,
     {
@@ -94,6 +96,7 @@ returnUserWithToken = (data) => {
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
+      admin: data.admin,
       accessToken: createToken(data),
     },
   };
@@ -103,20 +106,22 @@ returnUserWithToken = (data) => {
 returnUserLimited = (data) => {
   return {
     result: {
-      id: data._id || data.id,
+      id: data.id,
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
+      admin: data.admin,
     },
   };
 };
 
 returnUserLimitedLocal = (data) => {
   return {
-    id: data._id || data.id,
+    id: data.id,
     firstName: data.firstName,
     lastName: data.lastName,
     email: data.email,
+    admin: data.admin,
     // dateOfBirth: data.dateOfBirth,
     // imageURL: data.imageURL,
     // permissions: data.permissions,
@@ -130,6 +135,7 @@ returnUsers = (data) => {
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
+      admin: data.admin,
     })),
   };
 };
@@ -143,12 +149,16 @@ exports.create = (req, res) => {
   if (validationMessages.length != 0) {
     return res.status(400).send({ messages: validationMessages });
   } else {
+    if (!req.body.admin) {
+      req.body.admin = false;
+    }
     // Create a user
     let user = new User({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8),
+      admin: req.body.admin,
     });
 
     // const imageFilePaths = req.files.map((file) => req.protocol + '://' + req.get('host') + '/images/' + file.filename);
@@ -260,7 +270,9 @@ exports.update = async (req, res) => {
   if (!req.body) {
     return res.status(400).send({ message: "geen data?" });
   }
-
+  if (req.body.password) {
+    req.body.password = bcrypt.hashSync(req.body.password, 8);
+  }
   // let user = req.body;
 
   // if (req.files) {
@@ -356,31 +368,37 @@ exports.delete = (req, res) => {
 
 // Creates an admin
 exports.createAdmin = (req, res) => {
+  console.log("create function");
   let validationMessages = validateUserFields(req, true);
 
   // If request not valid, return messages
   if (validationMessages.length != 0) {
     return res.status(400).send({ messages: validationMessages });
+  } else {
+    req.body.admin = true;
+    // Create a user
+    let user = new User({
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      password: bcrypt.hashSync(req.body.password, 8),
+      admin: req.body.admin,
+    });
+    User.findOne({
+      where: {
+        email: req.body.email,
+      },
+    }).then((response) => {
+      console.log("response : " + response);
+      if (response == null || response.length == 0) {
+        storeUserInDatabase(user, res);
+      } else {
+        return res.status(400).send({
+          message: `Already exists an account with this email: ${user.email}`,
+        });
+      }
+    });
   }
-  // Create a user
-  let user = new User({
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 8),
-  });
-
-  User.find({
-    email: req.body.email,
-  }).then((response) => {
-    if (response.length == 0) {
-      storeUserInDatabase(user, res);
-    } else {
-      return res.status(400).send({
-        message: `Already exists an account with this email: ${user.email}`,
-      });
-    }
-  });
 };
 
 exports.findOneLocal = async (id) => {

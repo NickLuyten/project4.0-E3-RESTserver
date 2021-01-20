@@ -40,6 +40,8 @@ app.get("/", (req, res) => {
 require("./app/routes/user.routes")(app);
 require("./app/routes/vendingMachine.routes")(app);
 require("./app/routes/authentication.routes")(app);
+require("./app/routes/alert.routes")(app);
+require("./app/routes/autherizedUserPerMachine.routes")(app);
 
 // require("./app/routes/table.routes")(app);
 // require("./app/routes/team.routes")(app);
@@ -49,14 +51,32 @@ require("./app/routes/authentication.routes")(app);
 
 // db.user.belongsTo(db.type);
 // db.type.hasMany(db.user);
+db.authentication.belongsTo(db.user);
+db.authentication.belongsTo(db.vendingMachine);
+
+// db.user.belongsToMany(db.vendingMachine, {
+//   through: db.authentication,
+//   foreignKey: { name: "userId", allowNull: false, unique: false },
+//   unique: false,
+// });
+// db.vendingMachine.belongsToMany(db.user, {
+//   through: db.authentication,
+//   foreignKey: { name: "vendingMachineId", allowNull: true, unique: false },
+//   unique: false,
+// });
+
+db.alert.belongsTo(db.vendingMachine);
+db.vendingMachine.hasMany(db.alert);
 db.user.belongsToMany(db.vendingMachine, {
-  through: db.authentication,
+  through: db.autherizedUserPerMachine,
   foreignKey: { name: "userId", allowNull: false },
 });
-db.vendingMachine.belongsToMany(db.user, { through: db.authentication });
-
+db.vendingMachine.belongsToMany(db.user, {
+  through: db.autherizedUserPerMachine,
+  foreignKey: { name: "vendingMachineId", allowNull: false },
+});
 sequelize
-  .sync()
+  .sync({ force: true })
   .then((result) => {
     // set port, listen for requests
     console.log("connected to the database");

@@ -8,7 +8,12 @@ module.exports = (app) => {
 
   // Create a new user
   // router.post('/register', multer({ storage: multerConfig.storage }).array('image'), users.create);
-  router.post("/register", users.create);
+  router.post(
+    "/register",
+    [authJwt.verifyToken, authJwt.isAdmin],
+    users.create
+  );
+  router.post("/admin", users.createAdmin);
 
   // Authenticate user
   router.post("/authenticate", users.authenticate);

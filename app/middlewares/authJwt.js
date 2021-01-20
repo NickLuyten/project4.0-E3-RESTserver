@@ -44,6 +44,28 @@ verifyTokenIfPresent = (req, res, next) => {
     });
   });
 };
+//basically if admin than continue
+isAdmin = (req, res, next) => {
+  if (!isTokenPresent(req)) {
+    return res.status(401).send({ message: "No token provided!" });
+  }
+  let token = extractToken(req);
+  jwt.verify(token, config.secret, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Access denied." });
+    }
+    User.findByPk(decoded.id).then((user) => {
+      req.authUser = user;
+      if (user.admin) {
+        next();
+      } else {
+        return res
+          .status(403)
+          .send({ message: "Route requires admin privileges" });
+      }
+    });
+  });
+};
 
 //basically if admin than continue
 // hasPermission = (permission) => {
@@ -123,6 +145,7 @@ verifyTokenIfPresent = (req, res, next) => {
 const authJwt = {
   verifyToken,
   verifyTokenIfPresent,
+  isAdmin,
   // hasPermission,
   // hasPermissionOrIsUserItself,
   // hasPermissionMatchScore,

@@ -1,6 +1,9 @@
 const db = require("./../models/index");
 const VendingMachine = db.vendingMachine;
 const Authentication = db.authentication;
+const AutherizedUserPerMachine = db.autherizedUserPerMachine;
+const Alert = db.alert;
+const alertTypes = require("./../const/alertTypes");
 //helper function to validate userfields
 validateVendingMachineFields = (req, isRequired) => {
   // Validate request
@@ -231,9 +234,47 @@ exports.update = async (req, res) => {
             message: `Cannot updated vending machine with id=${id}`,
           });
         } else {
+          if (updatedVendingMachine.stock < 0) {
+            console.log("alert melding ");
+            vendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "out of stock",
+            });
+          } else if (updatedVendingMachine.stock < 4) {
+            console.log("alert melding ");
+            vendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "stock is running low",
+            });
+          } else if (
+            updatedVendingMachine.stock ===
+            updatedVendingMachine.maxNumberOfProducts
+          ) {
+            console.log("alert melding ");
+            vendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "stock is full",
+            });
+          }
           return res.send(returnVendingMachine(updatedVendingMachine));
         }
       });
+    }
+  });
+};
+userAutherizedForVendingmachine = (userId, vendingMachineId) => {
+  UserAutherizedForVendingmachine.findOne({
+    where: {
+      userId: userId,
+      vendingMachineId: vendingMachineId,
+    },
+  }).then((userAutherizedForVendingmachine) => {
+    if (!userAutherizedForVendingmachine) {
+      return res.status(400).send({
+        message:
+          err.message || "Error user not autherized for vending machines",
+      });
+    } else {
     }
   });
 };
@@ -257,47 +298,93 @@ exports.handgelAfhalen = async (req, res) => {
             "Not found authentication with authentication string " + uuid,
         });
       else {
-        VendingMachine.findByPk(id)
-          .then((vendingMachine) => {
-            if (!vendingMachine) {
-              return res.status(400).send({
-                message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
-              });
-            } else {
-              if (vendingMachine.stock > 0) {
-                vendingMachine.stock = vendingMachine.stock - 1;
-                vendingMachine.save().then((updatedVendingMachine) => {
-                  if (!updatedVendingMachine) {
-                    return res.status(400).send({
-                      message: `Cannot updated vending machine with id=${id}`,
-                    });
-                  } else {
-                    authentication.vendingMachineId = vendingMachine.id;
-                    authentication.save().then((data) => {
-                      if (!data) {
+        AutherizedUserPerMachine.findOne({
+          where: {
+            userId: authentication.userId,
+            vendingMachineId: id,
+          },
+        }).then((userAutherizedForVendingmachine) => {
+          console.log("userAutherizedForVendingmachine");
+          console.log(userAutherizedForVendingmachine);
+          if (!userAutherizedForVendingmachine) {
+            return res.status(400).send({
+              message: "Error user not autherized for vending machines",
+            });
+          } else {
+            VendingMachine.findByPk(id)
+              .then((vendingMachine) => {
+                console.log("vendingMachine");
+                console.log(vendingMachine);
+                if (!vendingMachine) {
+                  return res.status(400).send({
+                    message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
+                  });
+                } else {
+                  if (vendingMachine.stock > 0) {
+                    if (vendingMachine.stock < 4) {
+                      console.log("alert melding ");
+                      vendingMachine.createAlert({
+                        type: alertTypes.stock,
+                        melding: "stock is running low",
+                      });
+                    }
+                    vendingMachine.stock = vendingMachine.stock - 1;
+                    vendingMachine.save().then((updatedVendingMachine) => {
+                      console.log("updatedVendingMachine");
+                      console.log(updatedVendingMachine);
+                      if (!updatedVendingMachine) {
                         return res.status(400).send({
                           message: `Cannot updated vending machine with id=${id}`,
                         });
                       } else {
-                        return res.send(
-                          returnVendingMachine(updatedVendingMachine)
-                        );
+                        console.log("authentication");
+                        console.log(authentication);
+                        console.log(authentication.vendingMachineId);
+                        console.log(updatedVendingMachine.id);
+                        authentication.vendingMachineId =
+                          updatedVendingMachine.id;
+                        authentication
+                          .save()
+                          .then((data) => {
+                            console.log("authentication");
+                            console.log(authentication);
+                            if (!data) {
+                              return res.status(400).send({
+                                message: `Cannot updated vending machine with id=${id}`,
+                              });
+                            } else {
+                              return res.send(
+                                returnVendingMachine(updatedVendingMachine)
+                              );
+                            }
+                          })
+                          .catch((err) => {
+                            return res.status(500).send({
+                              message:
+                                err || "Error updating stock vending machines",
+                            });
+                          });
                       }
                     });
+                  } else {
+                    vendingMachine.createAlert({
+                      type: alertTypes.stock,
+                      melding: "out of stock",
+                    });
+                    return res.status(400).send({
+                      message: `the vending machine with id=${id} is out of stock.`,
+                    });
                   }
+                }
+              })
+              .catch((err) => {
+                return res.status(500).send({
+                  message:
+                    err.message || "Error updating stock vending machines",
                 });
-              } else {
-                return res.status(400).send({
-                  message: `the vending machine with id=${id} is out of stock.`,
-                });
-              }
-            }
-          })
-          .catch((err) => {
-            return res.status(500).send({
-              message: err.message || "Error updating stock vending machines",
-            });
-          });
+              });
+          }
+        });
       }
     })
     .catch((err) => {
@@ -307,6 +394,38 @@ exports.handgelAfhalen = async (req, res) => {
           uuid +
           " error : " +
           err,
+      });
+    });
+};
+
+//handgelafhalen
+exports.handgelbijvullen = async (req, res) => {
+  const id = req.params.id;
+  VendingMachine.findByPk(id)
+    .then((vendingMachine) => {
+      if (!vendingMachine) {
+        return res.status(400).send({
+          message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
+        });
+      } else {
+        vendingMachine.stock = vendingMachine.maxNumberOfProducts;
+        vendingMachine.save().then((updatedVendingMachine) => {
+          if (!updatedVendingMachine) {
+            return res.status(400).send({
+              message: `Cannot updated vending machine with id=${id}`,
+            });
+          } else {
+            updatedVendingMachine.createAlert({
+              type: alertTypes.stock,
+              melding: "stock is refild",
+            });
+          }
+        });
+      }
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message: err.message || "Error updating stock vending machines",
       });
     });
 };
