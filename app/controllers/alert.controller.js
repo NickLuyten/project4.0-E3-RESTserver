@@ -38,7 +38,7 @@ exports.machineMishandeld = (req, res) => {
   });
   console.log(alert);
   alert
-    .save()
+    .save(alert)
     .then((data) => {
       return res.send(returnAlert(data));
     })
