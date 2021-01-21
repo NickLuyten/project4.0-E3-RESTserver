@@ -1,6 +1,8 @@
 const db = require("./../models/index");
 const Alert = db.alert;
 const alertTypes = require("./../const/alertTypes");
+const UserThatReceiveAlertsFromVendingMachine =
+  db.userThatReceiveAlertsFromVendingMachine;
 
 returnAlert = (data) => {
   return {
@@ -46,6 +48,61 @@ exports.machineMishandeld = (req, res) => {
       });
     });
 };
+
+// Find a single user with an id
+exports.getAllAlertsFromUser = (req, res) => {
+  const id = req.authUser.id;
+
+  UserThatReceiveAlertsFromVendingMachine.findAll({
+    where: {
+      userId: id,
+    },
+    attributes: ["vendingMachineId"],
+  })
+    .then((vendingmachineAccess) => {
+      if (!vendingmachineAccess)
+        return res.status(400).send({
+          message: "Not found userAccesOnVendingMachines with id " + id,
+        });
+      else {
+        console.log(vendingmachineAccess);
+        let vendingmachineAccessArray = [];
+        for (let i = 0; i < vendingmachineAccess.length; i++) {
+          console.log(vendingmachineAccess[i]);
+          console.log(vendingmachineAccess[i].vendingMachineId);
+          vendingmachineAccessArray.push(
+            vendingmachineAccess[i].vendingMachineId
+          );
+        }
+        Alert.findAll({
+          where: {
+            vendingMachineId: vendingmachineAccessArray,
+          },
+        })
+          .then((alert) => {
+            console.log(alert);
+            if (!alert)
+              return res.status(400).send({ message: "No alerts found" });
+            return res.send(returnAlerts(alert));
+          })
+          .catch((err) => {
+            return res
+              .status(500)
+              .send({ message: err.message || "Error retrieving alerts" });
+          });
+      }
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message:
+          "Error retrieving userAccesOnVendingMachines with id=" +
+          id +
+          " error : " +
+          err,
+      });
+    });
+};
+
 // Find a single user with an id
 exports.findOne = (req, res) => {
   const id = req.params.id;

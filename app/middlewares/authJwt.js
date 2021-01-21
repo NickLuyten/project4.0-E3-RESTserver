@@ -67,6 +67,28 @@ isAdmin = (req, res, next) => {
   });
 };
 
+hasUserPriviliges = (req, res, next) => {
+  if (!isTokenPresent(req)) {
+    return res.status(401).send({ message: "No token provided!" });
+  }
+  let token = extractToken(req);
+  jwt.verify(token, config.secret, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Access denied." });
+    }
+    User.findByPk(decoded.id).then((user) => {
+      req.authUser = user;
+      if (!user.guest) {
+        next();
+      } else {
+        return res
+          .status(403)
+          .send({ message: "Route requires at least user privileges" });
+      }
+    });
+  });
+};
+
 //basically if admin than continue
 // hasPermission = (permission) => {
 //   return (req, res, next) => {
@@ -116,36 +138,43 @@ isAdmin = (req, res, next) => {
 //   };
 // };
 
-// //basically if admin or the logged in UserID is the same as the Parameter UserID
-// hasPermissionOrIsUserItself = (permission) => {
-//   return (req, res, next) => {
-//     if (!isTokenPresent(req)) {
-//       return res.status(401).send({ message: 'No token provided!' });
-//     } else {
-//       let token = extractToken(req);
-//       jwt.verify(token, config.secret, (err, decoded) => {
-//         if (err) {
-//           return res.status(403).send({ message: 'Access denied.' });
-//         }
-//         User.findById(decoded.id).then((user) => {
-//           req.authUser = user;
-//           if (user._id == req.params.id) {
-//             next();
-//           } else if (user.permissions.includes(permission)) {
-//             next();
-//           } else {
-//             return res.status(403).send({ message: 'Route requires privileges' });
-//           }
-//         });
-//       });
-//     }
-//   };
-// };
+//basically if admin or the logged in UserID is the same as the Parameter UserID
+isUserOrAdmin = (permission) => {
+  return (req, res, next) => {
+    if (!isTokenPresent(req)) {
+      return res.status(401).send({ message: "No token provided!" });
+    } else {
+      let token = extractToken(req);
+      jwt.verify(token, config.secret, (err, decoded) => {
+        if (err) {
+          return res.status(403).send({ message: "Access denied." });
+        }
+        User.findById(decoded.id).then((user) => {
+          req.authUser = user;
+          if (user.id == req.params.id) {
+            next();
+          } else if (user.admin) {
+            next();
+          } else {
+            return res
+              .status(403)
+              .send({
+                message:
+                  "Route requires admin privileges or you need to be the user",
+              });
+          }
+        });
+      });
+    }
+  };
+};
 
 const authJwt = {
   verifyToken,
   verifyTokenIfPresent,
   isAdmin,
+  hasUserPriviliges,
+  isUserOrAdmin,
   // hasPermission,
   // hasPermissionOrIsUserItself,
   // hasPermissionMatchScore,

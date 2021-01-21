@@ -42,6 +42,7 @@ require("./app/routes/vendingMachine.routes")(app);
 require("./app/routes/authentication.routes")(app);
 require("./app/routes/alert.routes")(app);
 require("./app/routes/autherizedUserPerMachine.routes")(app);
+require("./app/routes/userThatReceiveAlertsFromVendingMachine.routes")(app);
 
 // require("./app/routes/table.routes")(app);
 // require("./app/routes/team.routes")(app);
@@ -54,6 +55,8 @@ require("./app/routes/autherizedUserPerMachine.routes")(app);
 db.authentication.belongsTo(db.user);
 db.authentication.belongsTo(db.vendingMachine);
 
+db.userThatReceiveAlertsFromVendingMachine.belongsTo(db.user);
+db.userThatReceiveAlertsFromVendingMachine.belongsTo(db.vendingMachine);
 // db.user.belongsToMany(db.vendingMachine, {
 //   through: db.authentication,
 //   foreignKey: { name: "userId", allowNull: false, unique: false },

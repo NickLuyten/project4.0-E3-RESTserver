@@ -4,7 +4,16 @@ module.exports = (app) => {
   var router = require("express").Router();
 
   // Create a new user
-  router.post("/", authJwt.verifyToken, authentication.create);
+  router.post(
+    "/",
+    [authJwt.verifyToken, authJwt.hasUserPriviliges],
+    authentication.create
+  );
+  router.post(
+    "/guest/",
+    [authJwt.verifyToken, authJwt.isAdmin],
+    authentication.createQrCodeForUser
+  );
 
   // Retrieve all users
   router.get(
@@ -14,7 +23,11 @@ module.exports = (app) => {
   );
 
   // Retrieve a single user with id
-  router.get("/:id", authJwt.verifyToken, authentication.findOne);
+  router.get(
+    "/:id",
+    [authJwt.verifyToken, authJwt.hasUserPriviliges],
+    authentication.findOne
+  );
 
   // Retrieve a single user with id
   router.get(
@@ -22,6 +35,8 @@ module.exports = (app) => {
     authJwt.verifyToken,
     authentication.findByAuthenticationString
   );
+  // Retrieve a single user with id
+  router.get("/user/:id", authJwt.verifyToken, authentication.findByUserID);
 
   // Update a single user with id
   router.put(
