@@ -4,11 +4,7 @@ module.exports = (app) => {
   var router = require("express").Router();
 
   // Retrieve all users
-  router.post(
-    "/machineAbuse/:id",
-    authJwt.verifyToken,
-    alert.machineMishandeld
-  );
+  router.post("/machineAbuse/:id", alert.machineMishandeld);
 
   router.get(
     "/alertsAuthUser",

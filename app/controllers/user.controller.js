@@ -80,6 +80,7 @@ createToken = (user) => {
       lastName: user.lastName,
       email: user.email,
       admin: user.admin,
+      guest: user.guest,
     },
     config.secret,
     {
@@ -97,6 +98,7 @@ returnUserWithToken = (data) => {
       lastName: data.lastName,
       email: data.email,
       admin: data.admin,
+      guest: data.guest,
       accessToken: createToken(data),
     },
   };
@@ -111,6 +113,7 @@ returnUserLimited = (data) => {
       lastName: data.lastName,
       email: data.email,
       admin: data.admin,
+      guest: data.guest,
     },
   };
 };
@@ -122,6 +125,7 @@ returnUserLimitedLocal = (data) => {
     lastName: data.lastName,
     email: data.email,
     admin: data.admin,
+    guest: data.guest,
     // dateOfBirth: data.dateOfBirth,
     // imageURL: data.imageURL,
     // permissions: data.permissions,
@@ -136,6 +140,7 @@ returnUsers = (data) => {
       lastName: data.lastName,
       email: data.email,
       admin: data.admin,
+      guest: data.guest,
     })),
   };
 };
@@ -151,6 +156,11 @@ exports.create = (req, res) => {
   } else {
     if (!req.body.admin) {
       req.body.admin = false;
+    } else {
+      req.body.guest = false;
+    }
+    if (!req.body.guest) {
+      req.body.guest = false;
     }
     // Create a user
     let user = new User({
@@ -159,6 +169,7 @@ exports.create = (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8),
       admin: req.body.admin,
+      guest: req.body.guest,
     });
 
     // const imageFilePaths = req.files.map((file) => req.protocol + '://' + req.get('host') + '/images/' + file.filename);
@@ -313,6 +324,39 @@ exports.update = async (req, res) => {
   //       message: "Error updating with id=" + id,
   //     });
   //   });
+};
+
+// Update a user
+exports.updatePassword = async (req, res) => {
+  if (!req.body) {
+    return res.status(400).send({ message: "no data?" });
+  }
+  if (!req.body.password) {
+    return res.status(400).send({ message: "passwoord is required" });
+  }
+  if (req.body.password) {
+    req.body.password = bcrypt.hashSync(req.body.password, 8);
+  }
+
+  const id = req.params.id;
+  User.findByPk(id).then((user) => {
+    if (!user) {
+      return res.status(400).send({
+        message: `Cannot get user with id=${id}. Maybe user was not found!`,
+      });
+    } else {
+      user.password = req.body.password;
+      user.save().then((updatedUser) => {
+        if (!updatedUser) {
+          return res.status(400).send({
+            message: `Cannot update user with id=${id}`,
+          });
+        } else {
+          return res.send(returnUserWithToken(updatedUser));
+        }
+      });
+    }
+  });
 };
 
 // Find all users

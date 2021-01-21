@@ -6,7 +6,7 @@ module.exports = (app) => {
   // Create a new user
   router.post(
     "/",
-    authJwt.verifyToken,
+    [authJwt.verifyToken, authJwt.isAdmin],
     userThatReceiveAlertsFromVendingMachine.create
   );
 
@@ -20,7 +20,7 @@ module.exports = (app) => {
   // Retrieve a single user with id
   router.get(
     "/:id",
-    authJwt.verifyToken,
+    [authJwt.verifyToken, authJwt.isAdmin],
     userThatReceiveAlertsFromVendingMachine.findOne
   );
 

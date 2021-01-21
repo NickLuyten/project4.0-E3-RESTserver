@@ -27,16 +27,19 @@ module.exports = (app) => {
   // );
 
   // Retrieve all users
-  router.get("/all", authJwt.verifyToken, users.findAll);
+  router.get("/all", [authJwt.verifyToken,authJwt.hasUserPriviliges], users.findAll);
 
   // Retrieve a single user with id
-  router.get("/:id", authJwt.verifyToken, users.findOne);
+  router.get("/:id", [authJwt.verifyToken,authJwt.hasUserPriviliges], users.findOne);
 
   // Update a single user with id
-  router.put("/:id", authJwt.verifyToken, users.update);
+  router.put("/:id", [authJwt.verifyToken,authJwt.isUserOrAdmin], users.update);
+
+  // Update a single user with id
+  router.put("/updatePassword/:id", [authJwt.verifyToken,authJwt.isUserOrAdmin], users.update);
 
   // Delete a user with id
-  router.delete("/:id", authJwt.verifyToken, users.delete);
+  router.delete("/:id", [authJwt.verifyToken,authJwt.isAdmin], users.delete);
 
   app.use("/api/user", router);
 };

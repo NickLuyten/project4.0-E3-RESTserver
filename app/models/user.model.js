@@ -14,7 +14,8 @@ module.exports = (Sequelize, sequelize) => {
       unique: true,
     },
     password: Sequelize.STRING,
-    admin : Sequelize.BOOLEAN,
+    admin: Sequelize.BOOLEAN,
+    guest: Sequelize.BOOLEAN,
   });
 
   return User;

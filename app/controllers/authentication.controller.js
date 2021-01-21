@@ -71,6 +71,63 @@ exports.create = (req, res) => {
   });
 };
 
+exports.createQrCodeForUser = (req, res) => {
+  console.log("create function");
+  Authentication.findOne({
+    where: {
+      userId: req.body.userId,
+      vendingMachineId: null,
+    },
+  }).then((authenticationFound) => {
+    if (!authenticationFound) {
+      let authenticationString = uuidv4();
+      let authentication = new Authentication({
+        userId: req.body.userId,
+        authentication: authenticationString,
+      });
+      console.log(authentication);
+      authentication
+        .save(authentication)
+        .then((data) => {
+          console.log(data);
+          return res.send(returnAuthentication(data));
+        })
+        .catch(() => {
+          return res.status(500).send({
+            message: "Error creating authentication string ",
+          });
+        });
+    } else {
+      return res.send(returnAuthentication(authenticationFound));
+    }
+  });
+};
+// Find a single user with an id
+exports.findByUserID = (req, res) => {
+  const id = req.params.id;
+
+  Authentication.findOne({
+    where: {
+      userId: id,
+      vendingMachineId: null,
+    },
+  })
+    .then((data) => {
+      if (!data)
+        return res.status(400).send({
+          message: "there is no authentication string for this user " + id,
+        });
+      else {
+        console.log(data);
+        return res.send(returnAuthentication(data));
+      }
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message: "Error retrieving authentication string with id=" + id,
+      });
+    });
+};
 // Find a single user with an id
 exports.findOne = (req, res) => {
   const id = req.params.id;
