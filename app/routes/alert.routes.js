@@ -10,6 +10,12 @@ module.exports = (app) => {
     alert.machineMishandeld
   );
 
+  router.get(
+    "/alertsAuthUser",
+    authJwt.verifyToken,
+    alert.getAllAlertsFromUser
+  );
+
   // Retrieve all users
   router.get("/all", [authJwt.verifyToken, authJwt.isAdmin], alert.findAll);
 
