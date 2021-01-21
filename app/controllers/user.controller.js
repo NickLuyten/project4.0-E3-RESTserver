@@ -224,7 +224,7 @@ exports.authenticate = (req, res) => {
   })
     .then((user) => {
       if (!user) {
-        return res.status(200).send({
+        return res.status(400).send({
           error: "Er is geen gebruiker gevonden met dit e-mailadres.",
         });
       }
