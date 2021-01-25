@@ -237,6 +237,25 @@ exports.findOne = (req, res) => {
         .send({ message: "Error retrieving vending machine with id=" + id });
     });
 };
+//find all vending machines of company
+exports.findVendingMachinesFromCompany = (req, res) => {
+  const id = req.params.id;
+  VendingMachine.findAll({
+    where:{
+      companyId:id
+    }
+  })
+    .then((vendingMachines) => {
+      if (!vendingMachines)
+        return res.status(400).send({ message: "No vending machines found" });
+      return res.send(returnVendingMachines(vendingMachines));
+    })
+    .catch((err) => {
+      return res
+        .status(500)
+        .send({ message: err.message || "Error retrieving vending machines" });
+    });
+};
 
 // Update a user
 exports.update = async (req, res) => {
