@@ -202,7 +202,8 @@ exports.create = (req, res) => {
         } else {
           console.log("sanitizerLimitPerMonth");
           //check permissions
-          let permissionsRequest = req.body.permissions;
+          let permissionsRequest = JSON.parse(req.body.permissions);
+          console.log(permissionsRequest);
           let permissionsDoNotMatch = false;
 
           for (let i = 0; i < permissionsRequest.length; i++) {
@@ -218,8 +219,10 @@ exports.create = (req, res) => {
             });
           } else {
             //check if permissions are lower or the same as the user that created this user
-            let authUserPermission = req.authUser.permissions;
+            let authUserPermission = JSON.parse(req.authUser.permissions);
             let ToHighPermissions = false;
+            console.log(authUserPermission);
+            console.log(permissionsRequest);
 
             for (let i = 0; i < permissionsRequest.length; i++) {
               if (authUserPermission.indexOf(permissionsRequest[i]) == -1) {
@@ -230,7 +233,7 @@ exports.create = (req, res) => {
                 }
               }
             }
-            if (permissionsDoNotMatch) {
+            if (ToHighPermissions) {
               return res.status(400).send({
                 message:
                   "The user permissions are to high and cannot be given because the user who is creating this user doesn't have the permissions",
