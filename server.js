@@ -43,6 +43,7 @@ require("./app/routes/authentication.routes")(app);
 require("./app/routes/alert.routes")(app);
 require("./app/routes/autherizedUserPerMachine.routes")(app);
 require("./app/routes/userThatReceiveAlertsFromVendingMachine.routes")(app);
+require("./app/routes/company.routes")(app);
 
 // require("./app/routes/table.routes")(app);
 // require("./app/routes/team.routes")(app);
@@ -52,6 +53,10 @@ require("./app/routes/userThatReceiveAlertsFromVendingMachine.routes")(app);
 
 // db.user.belongsTo(db.type);
 // db.type.hasMany(db.user);
+
+db.user.belongsTo(db.company);
+db.company.hasMany(db.user);
+
 db.authentication.belongsTo(db.user);
 db.authentication.belongsTo(db.vendingMachine);
 
@@ -78,6 +83,10 @@ db.vendingMachine.belongsToMany(db.user, {
   through: db.autherizedUserPerMachine,
   foreignKey: { name: "vendingMachineId", allowNull: false },
 });
+
+db.vendingMachine.belongsTo(db.company);
+db.company.hasMany(db.vendingMachine);
+
 sequelize
   .sync()
   .then((result) => {

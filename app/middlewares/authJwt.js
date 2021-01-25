@@ -55,6 +55,9 @@ isAdmin = (req, res, next) => {
       return res.status(403).send({ message: "Access denied." });
     }
     User.findByPk(decoded.id).then((user) => {
+      if (!user) {
+        return res.status(403).send({ message: "user doesn't exist" });
+      }
       req.authUser = user;
       if (user.admin) {
         next();
@@ -156,12 +159,10 @@ isUserOrAdmin = (permission) => {
           } else if (user.admin) {
             next();
           } else {
-            return res
-              .status(403)
-              .send({
-                message:
-                  "Route requires admin privileges or you need to be the user",
-              });
+            return res.status(403).send({
+              message:
+                "Route requires admin privileges or you need to be the user",
+            });
           }
         });
       });

@@ -16,6 +16,10 @@ module.exports = (Sequelize, sequelize) => {
     password: Sequelize.STRING,
     admin: Sequelize.BOOLEAN,
     guest: Sequelize.BOOLEAN,
+    sanitizerLimitPerMonth: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    },
   });
 
   return User;

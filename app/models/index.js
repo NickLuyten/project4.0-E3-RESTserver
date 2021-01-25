@@ -19,6 +19,7 @@ db.userThatReceiveAlertsFromVendingMachine = require("./userThatReceiveAlertsFro
   Sequelize,
   sequelize
 );
+db.company = require("./company.model")(Sequelize, sequelize);
 // db.type = require("./type.model.js")(Sequelize, sequelize);
 // db.team = require('./team.model.js')(mongoose);
 // db.table = require('./table.model.js')(mongoose);
