@@ -185,7 +185,6 @@ exports.create = (req, res) => {
             message: "The company for user with id " + id + " was not found",
           });
         else {
-          console.log(sanitizerLimitPerMonth);
           let user = new User({
             firstName: req.body.firstName,
             lastName: req.body.lastName,
