@@ -4,6 +4,11 @@ const Authentication = db.authentication;
 const AutherizedUserPerMachine = db.autherizedUserPerMachine;
 const Alert = db.alert;
 const alertTypes = require("./../const/alertTypes");
+
+const UserThatReceiveAlertsFromVendingMachine =
+  db.userThatReceiveAlertsFromVendingMachine;
+const Company = db.company;
+
 //helper function to validate userfields
 validateVendingMachineFields = (req, isRequired) => {
   // Validate request
@@ -111,6 +116,7 @@ returnVendingMachine = (data) => {
       authenticationFailedMessage: data.authenticationFailedMessage,
       errorMessage: data.errorMessage,
       stock: data.stock,
+      companyId: data.companyId,
     },
   };
 };
@@ -128,6 +134,7 @@ returnVendingMachines = (data) => {
       authenticationFailedMessage: data.authenticationFailedMessage,
       errorMessage: data.errorMessage,
       stock: data.stock,
+      companyId: data.companyId,
     })),
   };
 };
@@ -145,6 +152,7 @@ returnVendingMachines = (data) => {
       authenticationFailedMessage: data.authenticationFailedMessage,
       errorMessage: data.errorMessage,
       stock: data.stock,
+      companyId: data.companyId,
     })),
   };
 };
@@ -158,33 +166,50 @@ exports.create = (req, res) => {
   if (validationMessages.length != 0) {
     return res.status(400).send({ messages: validationMessages });
   } else {
-    // Create a user
-    let vendingMachine = new VendingMachine({
-      name: req.body.name,
-      maxNumberOfProducts: req.body.maxNumberOfProducts,
-      location: req.body.location,
-      welcomeMessage: req.body.welcomeMessage,
-      handGelMessage: req.body.handGelMessage,
-      handGelOutOfStockMessage: req.body.handGelOutOfStockMessage,
-      authenticationFailedMessage: req.body.authenticationFailedMessage,
-      errorMessage: req.body.errorMessage,
-      stock: req.body.stock,
-    });
+    console.log("req.body.companyId : " + req.body.companyId);
+    Company.findByPk(req.body.companyId)
+      .then((company) => {
+        if (!company)
+          return res.status(400).send({
+            message:
+              "The company for vendingmachine with id " + id + " was not found",
+          });
+        else {
+          // Create a user
+          let vendingMachine = new VendingMachine({
+            name: req.body.name,
+            maxNumberOfProducts: req.body.maxNumberOfProducts,
+            location: req.body.location,
+            welcomeMessage: req.body.welcomeMessage,
+            handGelMessage: req.body.handGelMessage,
+            handGelOutOfStockMessage: req.body.handGelOutOfStockMessage,
+            authenticationFailedMessage: req.body.authenticationFailedMessage,
+            errorMessage: req.body.errorMessage,
+            stock: req.body.stock,
+            companyId: req.body.companyId,
+          });
 
-    VendingMachine.findOne({
-      where: {
-        name: req.body.name,
-      },
-    }).then((response) => {
-      console.log("response : " + response);
-      if (response == null || response.length == 0) {
-        storeVendingMachineInDatabase(vendingMachine, res);
-      } else {
-        return res.status(400).send({
-          message: `Already exists an vending machine with this name: ${vendingMachine.name}`,
+          VendingMachine.findOne({
+            where: {
+              name: req.body.name,
+            },
+          }).then((response) => {
+            console.log("response : " + response);
+            if (response == null || response.length == 0) {
+              storeVendingMachineInDatabase(vendingMachine, res);
+            } else {
+              return res.status(400).send({
+                message: `Already exists an vending machine with this name: ${vendingMachine.name}`,
+              });
+            }
+          });
+        }
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: "error creating vendingmachine with id " + id,
         });
-      }
-    });
+      });
   }
 };
 
@@ -460,34 +485,249 @@ exports.findAll = (req, res) => {
 };
 
 // Delete a user with the specified id in the request
+// exports.delete = (req, res) => {
+//   const id = req.params.id;
+//   VendingMachine.findByPk(id)
+//     .then((vendingMachine) => {
+//       if (!vendingMachine) {
+//         return res.status(400).send({
+//           message: `Cannot delete vending machine with id=${id}. Maybe vending machine was not found!`,
+//         });
+//       } else {
+//         vendingMachine
+//           .destroy()
+//           .then(() => {
+//             return res.send({
+//               message: "vending machine was deleted successfully!",
+//             });
+//           })
+//           .catch((err) => {
+//             return res.status(500).send({
+//               message:
+//                 err.message || "Could not delete vending machine with id=" + id,
+//             });
+//           });
+//       }
+//     })
+//     .catch((err) => {
+//       return res.status(500).send({
+//         message: err.message || "Could not vending machine user with id=" + id,
+//       });
+//     });
+// };
 exports.delete = (req, res) => {
   const id = req.params.id;
-
-  VendingMachine.findByPk(id)
-    .then((vendingMachine) => {
-      if (!vendingMachine) {
-        return res.status(400).send({
-          message: `Cannot delete vending machine with id=${id}. Maybe vending machine was not found!`,
-        });
-      } else {
-        vendingMachine
-          .destroy()
-          .then(() => {
-            return res.send({
-              message: "vending machine was deleted successfully!",
-            });
-          })
-          .catch((err) => {
-            return res.status(500).send({
-              message:
-                err.message || "Could not delete vending machine with id=" + id,
-            });
-          });
+  UserThatReceiveAlertsFromVendingMachine.findAll({
+    where: {
+      vendingMachineId: id,
+    },
+  })
+    .then((userThatReceiveAlertsFromVendingMachines) => {
+      for (
+        let i = 0;
+        i < userThatReceiveAlertsFromVendingMachines.length;
+        i++
+      ) {
+        userThatReceiveAlertsFromVendingMachines[i].destroy();
       }
+      Alert.findAll({
+        where: {
+          vendingMachineId: id,
+        },
+      })
+        .then((alerts) => {
+          for (let i = 0; i < alerts.length; i++) {
+            alerts[i].destroy();
+          }
+          AutherizedUserPerMachine.findAll({
+            where: {
+              vendingMachineId: id,
+            },
+          })
+            .then((autherizedUserPerMachines) => {
+              for (let i = 0; i < autherizedUserPerMachines.length; i++) {
+                autherizedUserPerMachines[i].destroy();
+              }
+              Authentication.findAll({
+                where: {
+                  vendingMachineId: id,
+                },
+              })
+                .then((authentications) => {
+                  for (let i = 0; i < authentications.length; i++) {
+                    authentications[i].destroy();
+                  }
+                  VendingMachine.findByPk(id)
+                    .then((vendingMachine) => {
+                      if (!vendingMachine) {
+                        return res.status(400).send({
+                          message: `Cannot delete vending machine with id=${id}. Maybe vending machine was not found!`,
+                        });
+                      } else {
+                        vendingMachine
+                          .destroy()
+                          .then(() => {
+                            return res.send({
+                              message:
+                                "vending machine was deleted successfully!",
+                            });
+                          })
+                          .catch((err) => {
+                            return res.status(500).send({
+                              message:
+                                err.message ||
+                                "Could not delete vending machine with id=" +
+                                  id,
+                            });
+                          });
+                      }
+                    })
+                    .catch((err) => {
+                      return res.status(500).send({
+                        message:
+                          err.message ||
+                          "Could not vending machine user with id=" + id,
+                      });
+                    });
+                })
+                .catch((err) => {
+                  return res.status(500).send({
+                    message:
+                      err.message ||
+                      "Could not delete authentications from vending machine user with id=" +
+                        id,
+                  });
+                });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message:
+                  err.message ||
+                  "Could not delete AutherizedUserPerMachine from vending machine user with id=" +
+                    id,
+              });
+            });
+        })
+        .catch((err) => {
+          return res.status(500).send({
+            message:
+              err.message ||
+              "Could not delete alerts from vending machine user with id=" + id,
+          });
+        });
     })
     .catch((err) => {
       return res.status(500).send({
-        message: err.message || "Could not vending machine user with id=" + id,
+        message:
+          err.message ||
+          "Could not delete UserThatReceiveAlertsFromVendingMachine from vending machine user with id=" +
+            id,
+      });
+    });
+};
+exports.deleteLocal = (req, res, id) => {
+  UserThatReceiveAlertsFromVendingMachine.findAll({
+    where: {
+      vendingMachineId: id,
+    },
+  })
+    .then((userThatReceiveAlertsFromVendingMachines) => {
+      for (
+        let i = 0;
+        i < userThatReceiveAlertsFromVendingMachines.length;
+        i++
+      ) {
+        userThatReceiveAlertsFromVendingMachines[i].destroy();
+      }
+      Alert.findAll({
+        where: {
+          vendingMachineId: id,
+        },
+      })
+        .then((alerts) => {
+          for (let i = 0; i < alerts.length; i++) {
+            alerts[i].destroy();
+          }
+          AutherizedUserPerMachine.findAll({
+            where: {
+              vendingMachineId: id,
+            },
+          })
+            .then((autherizedUserPerMachines) => {
+              for (let i = 0; i < autherizedUserPerMachines.length; i++) {
+                autherizedUserPerMachines[i].destroy();
+              }
+              Authentication.findAll({
+                where: {
+                  vendingMachineId: id,
+                },
+              })
+                .then((authentications) => {
+                  for (let i = 0; i < authentications.length; i++) {
+                    authentications[i].destroy();
+                  }
+                  VendingMachine.findByPk(id)
+                    .then((vendingMachine) => {
+                      if (!vendingMachine) {
+                        return res.status(400).send({
+                          message: `Cannot delete vending machine with id=${id}. Maybe vending machine was not found!`,
+                        });
+                      } else {
+                        vendingMachine
+                          .destroy()
+                          .then(() => {
+                            return;
+                          })
+                          .catch((err) => {
+                            return res.status(500).send({
+                              message:
+                                err.message ||
+                                "Could not delete vending machine with id=" +
+                                  id,
+                            });
+                          });
+                      }
+                    })
+                    .catch((err) => {
+                      return res.status(500).send({
+                        message:
+                          err.message ||
+                          "Could not vending machine user with id=" + id,
+                      });
+                    });
+                })
+                .catch((err) => {
+                  return res.status(500).send({
+                    message:
+                      err.message ||
+                      "Could not delete authentications from vending machine user with id=" +
+                        id,
+                  });
+                });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message:
+                  err.message ||
+                  "Could not delete AutherizedUserPerMachine from vending machine user with id=" +
+                    id,
+              });
+            });
+        })
+        .catch((err) => {
+          return res.status(500).send({
+            message:
+              err.message ||
+              "Could not delete alerts from vending machine user with id=" + id,
+          });
+        });
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message:
+          err.message ||
+          "Could not delete UserThatReceiveAlertsFromVendingMachine from vending machine user with id=" +
+            id,
       });
     });
 };

@@ -1,10 +1,16 @@
 const config = require("../config/auth.config");
 const db = require("./../models/index");
 const User = db.user;
+const Company = db.company;
+const Authentication = db.authentication;
+const AutherizedUserPerMachine = db.autherizedUserPerMachine;
+const UserThatReceiveAlertsFromVendingMachine =
+  db.userThatReceiveAlertsFromVendingMachine;
 // const { adminPermissions, userPermissions } = require("../const/permissions");
 
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
+const { autherizedUserPerMachine } = require("./../models/index");
 
 //helper function to validate userfields
 validateUserFields = (req, isRequired) => {
@@ -54,6 +60,11 @@ validateUserFields = (req, isRequired) => {
     }
   }
 
+  //Last Name
+  if (!req.body.companyId && isRequired) {
+    validationMessages.push("CompanyId is required.");
+  }
+
   return validationMessages;
 };
 
@@ -99,6 +110,7 @@ returnUserWithToken = (data) => {
       email: data.email,
       admin: data.admin,
       guest: data.guest,
+      companyId: data.companyId,
       accessToken: createToken(data),
     },
   };
@@ -114,6 +126,7 @@ returnUserLimited = (data) => {
       email: data.email,
       admin: data.admin,
       guest: data.guest,
+      companyId: data.companyId,
     },
   };
 };
@@ -126,6 +139,7 @@ returnUserLimitedLocal = (data) => {
     email: data.email,
     admin: data.admin,
     guest: data.guest,
+    companyId: data.companyId,
     // dateOfBirth: data.dateOfBirth,
     // imageURL: data.imageURL,
     // permissions: data.permissions,
@@ -141,6 +155,7 @@ returnUsers = (data) => {
       email: data.email,
       admin: data.admin,
       guest: data.guest,
+      companyId: data.companyId,
     })),
   };
 };
@@ -162,15 +177,46 @@ exports.create = (req, res) => {
     if (!req.body.guest) {
       req.body.guest = false;
     }
+    console.log("req.body.companyId : " + req.body.companyId);
+    Company.findByPk(req.body.companyId)
+      .then((company) => {
+        if (!company)
+          return res.status(400).send({
+            message: "The company for user with id " + id + " was not found",
+          });
+        else {
+          let user = new User({
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            password: bcrypt.hashSync(req.body.password, 8),
+            admin: req.body.admin,
+            guest: req.body.guest,
+            companyId: req.body.companyId,
+          });
+
+          User.findOne({
+            where: {
+              email: req.body.email,
+            },
+          }).then((response) => {
+            console.log("response : " + response);
+            if (response == null || response.length == 0) {
+              storeUserInDatabase(user, res);
+            } else {
+              return res.status(400).send({
+                message: `Already exists an account with this email: ${user.email}`,
+              });
+            }
+          });
+        }
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: "error creating user with id " + id,
+        });
+      });
     // Create a user
-    let user = new User({
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 8),
-      admin: req.body.admin,
-      guest: req.body.guest,
-    });
 
     // const imageFilePaths = req.files.map((file) => req.protocol + '://' + req.get('host') + '/images/' + file.filename);
 
@@ -181,21 +227,6 @@ exports.create = (req, res) => {
     // }
 
     // user.permissions = [...userPermissions];
-
-    User.findOne({
-      where: {
-        email: req.body.email,
-      },
-    }).then((response) => {
-      console.log("response : " + response);
-      if (response == null || response.length == 0) {
-        storeUserInDatabase(user, res);
-      } else {
-        return res.status(400).send({
-          message: `Already exists an account with this email: ${user.email}`,
-        });
-      }
-    });
   }
 };
 
@@ -375,41 +406,216 @@ exports.findAll = (req, res) => {
 };
 
 // Delete a user with the specified id in the request
+// exports.delete = (req, res) => {
+//   const id = req.params.id;
+//   User.findByPk(id)
+//     .then((user) => {
+//       if (!user) {
+//         return res.status(400).send({
+//           message: `Cannot delete user with id=${id}. Maybe user was not found!`,
+//         });
+//       } else {
+//         user
+//           .destroy()
+//           .then(() => {
+//             return res.send({
+//               message: "User was deleted successfully!",
+//             });
+//           })
+//           .catch((err) => {
+//             return res.status(500).send({
+//               message: err.message || "Could not delete user with id=" + id,
+//             });
+//           });
+//       }
+//     })
+//     .catch((err) => {
+//       return res.status(500).send({
+//         message: err.message || "Could not delete user with id=" + id,
+//       });
+//     });
+// };
 exports.delete = (req, res) => {
   const id = req.params.id;
-
-  // if (req.authUser._id == id) {
-  //   return res.status(400).send({ message: "Can't delete own account" });
-  // }
-
-  User.findByPk(id)
-    .then((user) => {
-      if (!user) {
-        return res.status(400).send({
-          message: `Cannot delete user with id=${id}. Maybe user was not found!`,
-        });
-      } else {
-        user
-          .destroy()
-          .then(() => {
-            return res.send({
-              message: "User was deleted successfully!",
-            });
-          })
-          .catch((err) => {
-            return res.status(500).send({
-              message: err.message || "Could not delete user with id=" + id,
-            });
-          });
+  Authentication.findAll({
+    where: {
+      userId: id,
+    },
+  })
+    .then((authentications) => {
+      console.log("authentications");
+      for (let i = 0; i < authentications.length; i++) {
+        authentications[i].destroy();
       }
+      AutherizedUserPerMachine.findAll({
+        where: {
+          userId: id,
+        },
+      })
+        .then((autherizedUserPerMachines) => {
+          console.log("autherizedUserPerMachines");
+          for (let i = 0; i < autherizedUserPerMachines.length; i++) {
+            autherizedUserPerMachines[i].destroy();
+          }
+          UserThatReceiveAlertsFromVendingMachine.findAll({
+            where: {
+              userId: id,
+            },
+          })
+            .then((userThatReceiveAlertsFromVendingMachines) => {
+              console.log("userThatReceiveAlertsFromVendingMachines");
+              for (
+                let i = 0;
+                i < userThatReceiveAlertsFromVendingMachines.length;
+                i++
+              ) {
+                userThatReceiveAlertsFromVendingMachines[i].destroy();
+              }
+              User.findByPk(id)
+                .then((user) => {
+                  console.log("user");
+                  if (!user) {
+                    return res.status(400).send({
+                      message: `Cannot delete user with id=${id}. Maybe user was not found!`,
+                    });
+                  } else {
+                    user
+                      .destroy()
+                      .then(() => {
+                        return res.send({
+                          message: "User was deleted successfully!",
+                        });
+                      })
+                      .catch((err) => {
+                        return res.status(500).send({
+                          message:
+                            err.message ||
+                            "Could not delete user with id=" + id,
+                        });
+                      });
+                  }
+                })
+                .catch((err) => {
+                  return res.status(500).send({
+                    message:
+                      err.message || "Could not delete user with id=" + id,
+                  });
+                });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message:
+                  err.message ||
+                  "Could not delete UserThatReceiveAlertsFromVendingMachine when deleting user with id=" +
+                    id,
+              });
+            });
+        })
+        .catch((err) => {
+          return res.status(500).send({
+            message:
+              err.message ||
+              "Could not delete AutherizedUserPerMachine when deleting user with id=" +
+                id,
+          });
+        });
     })
     .catch((err) => {
       return res.status(500).send({
-        message: err.message || "Could not delete user with id=" + id,
+        message:
+          err.message ||
+          "Could not delete AutherizedUserPerMachine when deleting user with id=" +
+            id,
       });
     });
 };
-
+exports.deleteLocal = (req, res, id) => {
+  Authentication.findAll({
+    where: {
+      userId: id,
+    },
+  })
+    .then((authentications) => {
+      for (let i = 0; i < authentications.length; i++) {
+        authentications[i].destroy();
+      }
+      AutherizedUserPerMachine.findAll({
+        where: {
+          userId: id,
+        },
+      })
+        .then((autherizedUserPerMachines) => {
+          for (let i = 0; i < autherizedUserPerMachines.length; i++) {
+            autherizedUserPerMachines[i].destroy();
+          }
+          UserThatReceiveAlertsFromVendingMachine.findAll({
+            where: {
+              userId: id,
+            },
+          })
+            .then((userThatReceiveAlertsFromVendingMachines) => {
+              for (
+                let i = 0;
+                i < userThatReceiveAlertsFromVendingMachines.length;
+                i++
+              ) {
+                userThatReceiveAlertsFromVendingMachines[i].destroy();
+              }
+              User.findByPk(id)
+                .then((user) => {
+                  if (!user) {
+                    return res.status(400).send({
+                      message: `Cannot delete user with id=${id}. Maybe user was not found!`,
+                    });
+                  } else {
+                    user
+                      .destroy()
+                      .then(() => {
+                        return;
+                      })
+                      .catch((err) => {
+                        return res.status(500).send({
+                          message:
+                            err.message ||
+                            "Could not delete user with id=" + id,
+                        });
+                      });
+                  }
+                })
+                .catch((err) => {
+                  return res.status(500).send({
+                    message:
+                      err.message || "Could not delete user with id=" + id,
+                  });
+                });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message:
+                  err.message ||
+                  "Could not delete UserThatReceiveAlertsFromVendingMachine when deleting user with id=" +
+                    id,
+              });
+            });
+        })
+        .catch((err) => {
+          return res.status(500).send({
+            message:
+              err.message ||
+              "Could not delete AutherizedUserPerMachine when deleting user with id=" +
+                id,
+          });
+        });
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message:
+          err.message ||
+          "Could not delete AutherizedUserPerMachine when deleting user with id=" +
+            id,
+      });
+    });
+};
 // Creates an admin
 exports.createAdmin = (req, res) => {
   console.log("create function");
