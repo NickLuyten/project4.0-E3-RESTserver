@@ -20,6 +20,9 @@ module.exports = (Sequelize, sequelize) => {
       type: Sequelize.INTEGER,
       allowNull: true,
     },
+    permissions: {
+      type: Sequelize.TEXT,
+    },
   });
 
   return User;

@@ -6,11 +6,13 @@ const Authentication = db.authentication;
 const AutherizedUserPerMachine = db.autherizedUserPerMachine;
 const UserThatReceiveAlertsFromVendingMachine =
   db.userThatReceiveAlertsFromVendingMachine;
+// const { test } = require("../const/permissions");
 // const { adminPermissions, userPermissions } = require("../const/permissions");
 
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
 const { autherizedUserPerMachine } = require("./../models/index");
+const permissions = require("../const/permissions");
 
 //helper function to validate userfields
 validateUserFields = (req, isRequired) => {
@@ -92,6 +94,7 @@ createToken = (user) => {
       email: user.email,
       admin: user.admin,
       guest: user.guest,
+      permissions: JSON.parse(user.permissions),
     },
     config.secret,
     {
@@ -112,6 +115,7 @@ returnUserWithToken = (data) => {
       guest: data.guest,
       companyId: data.companyId,
       accessToken: createToken(data),
+      permissions: JSON.parse(data.permissions),
     },
   };
 };
@@ -127,6 +131,7 @@ returnUserLimited = (data) => {
       admin: data.admin,
       guest: data.guest,
       companyId: data.companyId,
+      permissions: JSON.parse(data.permissions),
     },
   };
 };
@@ -177,44 +182,96 @@ exports.create = (req, res) => {
     if (!req.body.guest) {
       req.body.guest = false;
     }
+    if (!req.body.permissions) {
+      req.body.permissions = [];
+    }
     console.log("req.body.companyId : " + req.body.companyId);
     Company.findByPk(req.body.companyId)
       .then((company) => {
-        if (!company)
-          return res.status(400).send({
-            message: "The company for user with id " + id + " was not found",
-          });
-        else {
-          let user = new User({
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            email: req.body.email,
-            password: bcrypt.hashSync(req.body.password, 8),
-            admin: req.body.admin,
-            guest: req.body.guest,
-            companyId: req.body.companyId,
-            sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
-          });
+        console.log("company");
+        console.log(company);
+        console.log(!company);
 
-          User.findOne({
-            where: {
-              email: req.body.email,
-            },
-          }).then((response) => {
-            console.log("response : " + response);
-            if (response == null || response.length == 0) {
-              storeUserInDatabase(user, res);
-            } else {
+        if (!company) {
+          return res.status(400).send({
+            message:
+              "The company with id " +
+              req.body.companyId +
+              " was not found while creating a user",
+          });
+        } else {
+          console.log("sanitizerLimitPerMonth");
+          //check permissions
+          let permissionsRequest = req.body.permissions;
+          let permissionsDoNotMatch = false;
+
+          for (let i = 0; i < permissionsRequest.length; i++) {
+            if (permissions.test.indexOf(permissionsRequest[i]) == -1) {
+              permissionsDoNotMatch = true;
+              i = permissionsRequest.length;
+            }
+          }
+          if (permissionsDoNotMatch) {
+            return res.status(400).send({
+              message:
+                "The user permissions do not match with known permissions",
+            });
+          } else {
+            //check if permissions are lower or the same as the user that created this user
+            let authUserPermission = req.authUser.permissions;
+            let ToHighPermissions = false;
+
+            for (let i = 0; i < permissionsRequest.length; i++) {
+              if (authUserPermission.indexOf(permissionsRequest[i]) == -1) {
+                let alternatif = permissionsRequest[i].replace("_COMPANY", "");
+                if (authUserPermission.indexOf(alternatif) == -1) {
+                  ToHighPermissions = true;
+                  i = permissionsRequest.length;
+                }
+              }
+            }
+            if (permissionsDoNotMatch) {
               return res.status(400).send({
-                message: `Already exists an account with this email: ${user.email}`,
+                message:
+                  "The user permissions are to high and cannot be given because the user who is creating this user doesn't have the permissions",
+              });
+            } else {
+              if (!req.body.sanitizerLimitPerMonth) {
+                req.body.sanitizerLimitPerMonth = 0;
+              }
+              console.log("user");
+              let user = new User({
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                email: req.body.email,
+                password: bcrypt.hashSync(req.body.password, 8),
+                admin: req.body.admin,
+                guest: req.body.guest,
+                companyId: req.body.companyId,
+                sanitizerLimitPerMonth: 0,
+              });
+
+              User.findOne({
+                where: {
+                  email: req.body.email,
+                },
+              }).then((response) => {
+                console.log("response : " + response);
+                if (response == null || response.length == 0) {
+                  storeUserInDatabase(user, res);
+                } else {
+                  return res.status(400).send({
+                    message: `Already exists an account with this email: ${user.email}`,
+                  });
+                }
               });
             }
-          });
+          }
         }
       })
       .catch((err) => {
         return res.status(500).send({
-          message: "error creating user with id " + id,
+          message: "error creating user  error : " + err,
         });
       });
     // Create a user
@@ -635,6 +692,7 @@ exports.createAdmin = (req, res) => {
       password: bcrypt.hashSync(req.body.password, 8),
       admin: req.body.admin,
       sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
+      permissions: JSON.stringify(permissions.adminPermissions),
     });
     User.findOne({
       where: {
