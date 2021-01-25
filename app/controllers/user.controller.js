@@ -185,6 +185,7 @@ exports.create = (req, res) => {
             message: "The company for user with id " + id + " was not found",
           });
         else {
+          console.log(sanitizerLimitPerMonth);
           let user = new User({
             firstName: req.body.firstName,
             lastName: req.body.lastName,
@@ -193,6 +194,7 @@ exports.create = (req, res) => {
             admin: req.body.admin,
             guest: req.body.guest,
             companyId: req.body.companyId,
+            sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
           });
 
           User.findOne({
@@ -633,6 +635,7 @@ exports.createAdmin = (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8),
       admin: req.body.admin,
+      sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
     });
     User.findOne({
       where: {
