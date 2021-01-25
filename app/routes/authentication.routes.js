@@ -25,7 +25,6 @@ module.exports = (app) => {
   // Retrieve a single user with id
   router.get(
     "/:id",
-    [authJwt.verifyToken, authJwt.hasUserPriviliges],
     authentication.findOne
   );
 

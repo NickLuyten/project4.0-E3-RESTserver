@@ -24,6 +24,12 @@ module.exports = (app) => {
     vendingMachine.findOne
   );
 
+  router.get(
+    "/company/:id",
+    [authJwt.verifyToken, authJwt.isAdmin],
+    vendingMachine.findVendingMachinesFromCompany
+  );
+
   // Update a single user with id
   router.put(
     "/:id",
