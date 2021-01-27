@@ -88,7 +88,7 @@ db.vendingMachine.belongsTo(db.company);
 db.company.hasMany(db.vendingMachine);
 
 sequelize
-  .sync({ force: true })
+  .sync() //{ force: true }
   .then((result) => {
     // set port, listen for requests
     console.log("connected to the database");

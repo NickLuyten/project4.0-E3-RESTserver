@@ -364,6 +364,7 @@ exports.findOne = (req, res) => {
 
 // Update a user
 exports.update = async (req, res) => {
+  console.log("update");
   let validationMessages = validateUserFields(req, false);
   // If request not valid, return messages
   if (validationMessages.length != 0) {
@@ -376,6 +377,65 @@ exports.update = async (req, res) => {
   if (req.body.password) {
     req.body.password = bcrypt.hashSync(req.body.password, 8);
   }
+  if (req.body.companyId) {
+    let company;
+    try {
+      company = await Company.findByPk(req.body.companyId);
+    } catch (err) {
+      return res.status(500).send({
+        message:
+          err.message ||
+          "Error retrieving company with id: " + req.body.companyId,
+      });
+    }
+    if (!company) {
+      return res.status(400).send({
+        message:
+          "The company with id " +
+          req.body.companyId +
+          " was not found while creating a user",
+      });
+    }
+  }
+  console.log("update2");
+
+  if (req.body.permissions) {
+    let permissionsRequest = JSON.parse(req.body.permissions);
+    let permissionsDoNotMatch = false;
+    for (let i = 0; i < permissionsRequest.length; i++) {
+      if (permissions.test.indexOf(permissionsRequest[i]) == -1) {
+        permissionsDoNotMatch = true;
+        i = permissionsRequest.length;
+      }
+    }
+    if (permissionsDoNotMatch) {
+      return res.status(400).send({
+        message: "The user permissions do not match with known permissions",
+      });
+    } else {
+      let authUserPermission = JSON.parse(req.authUser.permissions);
+      let ToHighPermissions = false;
+      console.log(authUserPermission);
+      console.log(permissionsRequest);
+      console.log("update3");
+
+      for (let i = 0; i < permissionsRequest.length; i++) {
+        if (authUserPermission.indexOf(permissionsRequest[i]) == -1) {
+          let alternatif = permissionsRequest[i].replace("_COMPANY", "");
+          if (authUserPermission.indexOf(alternatif) == -1) {
+            ToHighPermissions = true;
+            i = permissionsRequest.length;
+          }
+        }
+      }
+      if (ToHighPermissions) {
+        return res.status(400).send({
+          message:
+            "The user permissions are to high and cannot be given because the user who is creating this user doesn't have the permissions",
+        });
+      }
+    }
+  }
   // let user = req.body;
 
   // if (req.files) {
@@ -384,6 +444,7 @@ exports.update = async (req, res) => {
   //     user.imageURL = imageFilePaths[0];
   //   }
   // }
+  console.log("update4");
 
   const id = req.params.id;
   User.findByPk(id).then((user) => {
@@ -420,6 +481,8 @@ exports.update = async (req, res) => {
 
 // Update a user
 exports.updatePassword = async (req, res) => {
+  console.log("updatePassword");
+
   if (!req.body) {
     return res.status(400).send({ message: "no data?" });
   }

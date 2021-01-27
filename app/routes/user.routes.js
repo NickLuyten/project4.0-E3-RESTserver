@@ -36,7 +36,7 @@ module.exports = (app) => {
   router.put("/:id", [authJwt.verifyToken,authJwt.isUserOrAdmin], users.update);
 
   // Update a single user with id
-  router.put("/updatePassword/:id", [authJwt.verifyToken,authJwt.isUserOrAdmin], users.update);
+  router.put("/updatePassword/:id", [authJwt.verifyToken,authJwt.isUserOrAdmin], users.updatePassword);
 
   // Delete a user with id
   router.delete("/:id", [authJwt.verifyToken,authJwt.isAdmin], users.delete);

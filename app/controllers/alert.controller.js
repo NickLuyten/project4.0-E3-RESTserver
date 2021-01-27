@@ -3,6 +3,9 @@ const Alert = db.alert;
 const alertTypes = require("./../const/alertTypes");
 const UserThatReceiveAlertsFromVendingMachine =
   db.userThatReceiveAlertsFromVendingMachine;
+const permission = require("../const/permissions");
+const { authJwt } = require("../middlewares/index");
+const VendingMachine = db.vendingMachine;
 
 returnAlert = (data) => {
   return {
@@ -31,22 +34,42 @@ exports.machineMishandeld = (req, res) => {
   console.log("create function alert");
   const id = req.params.id;
 
-  let alert = new Alert({
-    type: alertTypes.machineAbuse,
-    melding: "de machine wordt misbruikt",
-    vendingMachineId: id,
-  });
-  console.log(alert);
-  alert
-    .save(alert)
-    .then((data) => {
-      return res.send(returnAlert(data));
-    })
-    .catch(() => {
-      return res.status(500).send({
-        message: "Error creating alert ",
+  VendingMachine.findByPk(id).then((vendingmachine) => {
+    if (!vendingmachine) {
+      return res.status(400).send({
+        message:
+          "vending machine with id: " +
+          id +
+          " was not found for creating alert",
       });
+    } else {
+      if (authJwt.checkIfCompanyPermission(permission.ALERT_CREATE_COMPANY))
+        if (vendingmachine.companyId == req.authUser.companyId) {
+          return res.status(400).send({
+            message:
+              "vending machine with id: " +
+              id +
+              " can't be updated because the user can not update the vending machines of another company",
+          });
+        }
+    }
+    let alert = new Alert({
+      type: alertTypes.machineAbuse,
+      melding: "de machine wordt misbruikt",
+      vendingMachineId: id,
     });
+    console.log(alert);
+    alert
+      .save(alert)
+      .then((data) => {
+        return res.send(returnAlert(data));
+      })
+      .catch(() => {
+        return res.status(500).send({
+          message: "Error creating alert ",
+        });
+      });
+  });
 };
 
 // Find a single user with an id
