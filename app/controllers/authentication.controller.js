@@ -1,6 +1,12 @@
 const db = require("./../models/index");
 const { v4: uuidv4 } = require("uuid");
 const Authentication = db.authentication;
+const permission = require("../const/permissions");
+const { authJwt } = require("../middlewares/index");
+const User = db.user;
+const VendingMachine = db.vendingMachine;
+const { Op } = require("sequelize");
+const { vendingMachine, user } = require("./../models/index");
 
 //helper function to store user in db
 storeAuthenticationDatabase = (authentication, res) => {
@@ -73,37 +79,52 @@ exports.create = (req, res) => {
 
 exports.createQrCodeForUser = (req, res) => {
   console.log("create function");
-  Authentication.findOne({
-    where: {
-      userId: req.body.userId,
-      vendingMachineId: null,
-    },
-  }).then((authenticationFound) => {
-    if (!authenticationFound) {
-      let authenticationString = uuidv4();
-      let authentication = new Authentication({
-        userId: req.body.userId,
-        authentication: authenticationString,
-      });
-      console.log(authentication);
-      authentication
-        .save(authentication)
-        .then((data) => {
-          console.log(data);
-          return res.send(returnAuthentication(data));
-        })
-        .catch(() => {
-          return res.status(500).send({
-            message: "Error creating authentication string ",
-          });
+
+  User.findByPk(req.body.userId).then((user) => {
+    if (
+      authJwt.cehckIfPermission(req, permission.AUTHENTICATION_CREATE_COMPANY)
+    ) {
+      if (req.authUser.companyId != user.companyId) {
+        return res.status(400).send({
+          message:
+            "User with id: " +
+            user.id +
+            " can't be updated because the user can not update the users from another company",
         });
-    } else {
-      return res.send(returnAuthentication(authenticationFound));
+      }
     }
+    Authentication.findOne({
+      where: {
+        userId: req.body.userId,
+        vendingMachineId: null,
+      },
+    }).then((authenticationFound) => {
+      if (!authenticationFound) {
+        let authenticationString = uuidv4();
+        let authentication = new Authentication({
+          userId: req.body.userId,
+          authentication: authenticationString,
+        });
+        console.log(authentication);
+        authentication
+          .save(authentication)
+          .then((data) => {
+            console.log(data);
+            return res.send(returnAuthentication(data));
+          })
+          .catch(() => {
+            return res.status(500).send({
+              message: "Error creating authentication string ",
+            });
+          });
+      } else {
+        return res.send(returnAuthentication(authenticationFound));
+      }
+    });
   });
 };
 // Find a single user with an id
-exports.findByUserID = (req, res) => {
+exports.findByUserID = async (req, res) => {
   const id = req.params.id;
 
   Authentication.findOne({
@@ -112,14 +133,28 @@ exports.findByUserID = (req, res) => {
       vendingMachineId: null,
     },
   })
-    .then((data) => {
+    .then(async (data) => {
       if (!data)
         return res.status(400).send({
           message: "there is no authentication string for this user " + id,
         });
       else {
-        console.log(data);
-        return res.send(returnAuthentication(data));
+        if (
+          authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+        ) {
+          let user = await User.findByPk(data.userId);
+          if (user.companyId == req.authUser.companyId) {
+            return res.send(returnAuthentication(data));
+          } else {
+            return res.status(400).send({
+              message:
+                "you cannot read this authentication becaus it is from another company",
+            });
+          }
+        } else {
+          console.log(data);
+          return res.send(returnAuthentication(data));
+        }
       }
     })
     .catch((err) => {
@@ -129,18 +164,48 @@ exports.findByUserID = (req, res) => {
     });
 };
 // Find a single user with an id
-exports.findOne = (req, res) => {
+exports.findOne = async (req, res) => {
+  console.log("findone");
   const id = req.params.id;
 
   Authentication.findByPk(id)
-    .then((data) => {
+    .then(async (data) => {
       if (!data)
         return res
           .status(400)
           .send({ message: "Not found authentication with id " + id });
       else {
-        console.log(data);
-        return res.send(returnAuthentication(data));
+        if (
+          authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+        ) {
+          console.log("vendingmachines");
+          console.log(data.vendingMachineId);
+          let vendingmachines = null;
+          if (data.vendingMachineId != null) {
+            vendingmachines = await VendingMachine.findByPk(
+              data.vendingMachineId
+            );
+            console.log("vendingmachines2");
+          }
+          let user = await User.findByPk(data.userId);
+          if (
+            user.companyId == req.authUser.companyId ||
+            (vendingmachines &&
+              vendingmachines.companyId == req.authUser.companyId)
+          ) {
+            console.log("vendingmachines3");
+            console.log(data);
+            return res.send(returnAuthentication(data));
+          } else {
+            return res.status(400).send({
+              message:
+                "you cannot read this authentication becaus it is from another company",
+            });
+          }
+        } else {
+          console.log(data);
+          return res.send(returnAuthentication(data));
+        }
       }
     })
     .catch((err) => {
@@ -158,15 +223,44 @@ exports.findByAuthenticationString = (req, res) => {
       authentication: uuid,
     },
   })
-    .then((data) => {
+    .then(async (data) => {
       if (!data)
         return res.status(400).send({
           message:
             "Not found authentication with authentication string " + uuid,
         });
       else {
-        console.log(data);
-        return res.send(returnAuthentication(data));
+        if (
+          authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+        ) {
+          console.log("vendingmachines");
+          console.log(data.vendingMachineId);
+          let vendingmachines = null;
+          if (data.vendingMachineId != null) {
+            vendingmachines = await VendingMachine.findByPk(
+              data.vendingMachineId
+            );
+            console.log("vendingmachines2");
+          }
+          let user = await User.findByPk(data.userId);
+          if (
+            user.companyId == req.authUser.companyId ||
+            (vendingmachines &&
+              vendingmachines.companyId == req.authUser.companyId)
+          ) {
+            console.log("vendingmachines3");
+            console.log(data);
+            return res.send(returnAuthentication(data));
+          } else {
+            return res.status(400).send({
+              message:
+                "you cannot read this authentication becaus it is from another company",
+            });
+          }
+        } else {
+          console.log(data);
+          return res.send(returnAuthentication(data));
+        }
       }
     })
     .catch((err) => {
@@ -192,33 +286,105 @@ exports.update = async (req, res) => {
         message: `Cannot get authentication with id=${id}. Maybe authentication string was not found!`,
       });
     } else {
-      authentication.vendingMachineId = req.body.vendingMachineId;
-      authentication.save().then((updatedAuthentication) => {
-        if (!updatedAuthentication) {
-          return res.status(400).send({
-            message: `Cannot updated vending machine with id=${id}`,
-          });
-        } else {
-          return res.send(returnAuthentication(updatedAuthentication));
+      VendingMachine.findByPk(req.body.vendingMachineId).then(
+        (vendingmachine) => {
+          if (!vendingmachine) {
+            return res.status(400).send({
+              message: `Cannot get vendingmachine with id=${id}. Maybe vendingmachine string was not found when updating authentication!`,
+            });
+          } else {
+            User.findByPk(authentication.userId).then((user) => {
+              if (!user) {
+                return res.status(400).send({
+                  message: `Cannot get user with id=${id}. Maybe user was not found when updating authentication!`,
+                });
+              } else {
+                if (
+                  authJwt.cehckIfPermission(
+                    req,
+                    permission.AUTHENTICATION_UPDATE_COMPANY
+                  )
+                ) {
+                  console.log(req.authUser.companyId);
+                  console.log(user);
+                  if (req.authUser.companyId != user.companyId) {
+                    return res.status(400).send({
+                      message: `not autherized to update this authetntication because the user is from another company`,
+                    });
+                  }
+                }
+                authentication.vendingMachineId = req.body.vendingMachineId;
+                authentication.save().then((updatedAuthentication) => {
+                  if (!updatedAuthentication) {
+                    return res.status(400).send({
+                      message: `Cannot updated vending machine with id=${id}`,
+                    });
+                  } else {
+                    return res.send(
+                      returnAuthentication(updatedAuthentication)
+                    );
+                  }
+                });
+              }
+            });
+          }
         }
-      });
+      );
     }
   });
 };
 
 // Find all users
-exports.findAll = (req, res) => {
-  Authentication.findAll()
-    .then((authentication) => {
-      if (!authentication)
-        return res.status(400).send({ message: "No authentication found" });
-      return res.send(returnAuthentications(authentication));
-    })
-    .catch((err) => {
-      return res
-        .status(500)
-        .send({ message: err.message || "Error retrieving authentication" });
+exports.findAll = async (req, res) => {
+  if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+    let vendingmachines = await VendingMachine.findAll({
+      where: { companyId: req.authUser.companyId },
     });
+    let vendingmachinesIds = [];
+    for (let i = 0; i < vendingmachines.length; i++) {
+      vendingmachinesIds.push(vendingmachines[i].id);
+    }
+    let users = await User.findAll({
+      where: { companyId: req.authUser.companyId },
+    });
+    let usersIds = [];
+    for (let i = 0; i < users.length; i++) {
+      usersIds.push(users[i].id);
+    }
+    console.log(usersIds);
+    Authentication.findAll({
+      where: {
+        [Op.or]: [
+          {
+            vendingMachineId: vendingmachinesIds,
+          },
+          { userId: usersIds },
+        ],
+      },
+    })
+      .then((authentication) => {
+        if (!authentication)
+          return res.status(400).send({ message: "No authentication found" });
+        return res.send(returnAuthentications(authentication));
+      })
+      .catch((err) => {
+        return res
+          .status(500)
+          .send({ message: err.message || "Error retrieving authentication" });
+      });
+  } else {
+    Authentication.findAll()
+      .then((authentication) => {
+        if (!authentication)
+          return res.status(400).send({ message: "No authentication found" });
+        return res.send(returnAuthentications(authentication));
+      })
+      .catch((err) => {
+        return res
+          .status(500)
+          .send({ message: err.message || "Error retrieving authentication" });
+      });
+  }
 };
 
 // Delete a user with the specified id in the request
@@ -232,19 +398,56 @@ exports.delete = (req, res) => {
           message: `Cannot delete authentication with id=${id}. Maybe authentication was not found!`,
         });
       } else {
-        authentication
-          .destroy()
-          .then(() => {
-            return res.send({
-              message: "authentication was deleted successfully!",
-            });
-          })
-          .catch((err) => {
-            return res.status(500).send({
-              message:
-                err.message || "Could not delete vauthentication with id=" + id,
-            });
+        if (
+          authJwt.cehckIfPermission(
+            req,
+            permission.AUTHENTICATION_UPDATE_COMPANY
+          )
+        ) {
+          User.findByPk(authentication.userId).then((user) => {
+            if (!user) {
+              return res.status(400).send({
+                message: `Cannot get user with id=${id}. Maybe user was not found when updating authentication!`,
+              });
+            } else {
+              if (req.authUser.companyId != user.companyId) {
+                return res.status(400).send({
+                  message: `not autherized to update this authetntication because the user is from another company`,
+                });
+              } else {
+                authentication
+                  .destroy()
+                  .then(() => {
+                    return res.send({
+                      message: "authentication was deleted successfully!",
+                    });
+                  })
+                  .catch((err) => {
+                    return res.status(500).send({
+                      message:
+                        err.message ||
+                        "Could not delete vauthentication with id=" + id,
+                    });
+                  });
+              }
+            }
           });
+        } else {
+          authentication
+            .destroy()
+            .then(() => {
+              return res.send({
+                message: "authentication was deleted successfully!",
+              });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message:
+                  err.message ||
+                  "Could not delete vauthentication with id=" + id,
+              });
+            });
+        }
       }
     })
     .catch((err) => {

@@ -183,7 +183,7 @@ exports.create = (req, res) => {
       req.body.guest = false;
     }
     if (!req.body.permissions) {
-      req.body.permissions = [];
+      req.body.permissions = JSON.stringify([]);
     }
     console.log("req.body.companyId : " + req.body.companyId);
     Company.findByPk(req.body.companyId)
@@ -252,6 +252,7 @@ exports.create = (req, res) => {
                 guest: req.body.guest,
                 companyId: req.body.companyId,
                 sanitizerLimitPerMonth: 0,
+                permissions: JSON.stringify(permissionsRequest),
               });
 
               User.findOne({

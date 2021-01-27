@@ -43,8 +43,10 @@ exports.machineMishandeld = (req, res) => {
           " was not found for creating alert",
       });
     } else {
-      if (authJwt.checkIfCompanyPermission(permission.ALERT_CREATE_COMPANY))
-        if (vendingmachine.companyId == req.authUser.companyId) {
+      console.log("authuser");
+      if (authJwt.cehckIfPermission(req, permission.ALERT_CREATE_COMPANY)) {
+        console.log("cehckIfPermission true");
+        if (vendingmachine.companyId != req.authUser.companyId) {
           return res.status(400).send({
             message:
               "vending machine with id: " +
@@ -52,23 +54,27 @@ exports.machineMishandeld = (req, res) => {
               " can't be updated because the user can not update the vending machines of another company",
           });
         }
-    }
-    let alert = new Alert({
-      type: alertTypes.machineAbuse,
-      melding: "de machine wordt misbruikt",
-      vendingMachineId: id,
-    });
-    console.log(alert);
-    alert
-      .save(alert)
-      .then((data) => {
-        return res.send(returnAlert(data));
-      })
-      .catch(() => {
-        return res.status(500).send({
-          message: "Error creating alert ",
-        });
+      }
+      console.log("create alert");
+      let alert = new Alert({
+        type: alertTypes.machineAbuse,
+        melding: "de machine wordt misbruikt",
+        vendingMachineId: id,
       });
+      console.log(alert);
+      alert
+        .save(alert)
+        .then((data) => {
+          console.log("saved");
+
+          return res.send(returnAlert(data));
+        })
+        .catch(() => {
+          return res.status(500).send({
+            message: "Error creating alert ",
+          });
+        });
+    }
   });
 };
 
@@ -132,13 +138,27 @@ exports.findOne = (req, res) => {
 
   Alert.findByPk(id)
     .then((data) => {
-      if (!data)
+      if (!data) {
         return res
           .status(400)
           .send({ message: "Not found alert with id " + id });
-      else {
-        console.log(data);
-        return res.send(returnAlert(data));
+      } else {
+        if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+          VendingMachine.findByPk(data.vendingMachineId).then(
+            (vendingmachine) => {
+              if (vendingmachine.companyId == req.authUser.companyId) {
+                return res.send(returnAlert(data));
+              } else {
+                return res.status(400).send({
+                  message: "you cannot see the alerts from other companies",
+                });
+              }
+            }
+          );
+        } else {
+          console.log(data);
+          return res.send(returnAlert(data));
+        }
       }
     })
     .catch((err) => {
@@ -149,17 +169,41 @@ exports.findOne = (req, res) => {
 };
 
 // Find all users
-exports.findAll = (req, res) => {
-  Alert.findAll()
-    .then((alert) => {
-      if (!alert) return res.status(400).send({ message: "No alert found" });
-      return res.send(returnAlerts(alert));
-    })
-    .catch((err) => {
-      return res
-        .status(500)
-        .send({ message: err.message || "Error retrieving alert" });
+exports.findAll = async (req, res) => {
+  if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+    let vendingmachines = await VendingMachine.findAll({
+      where: { companyId: req.authUser.companyId },
     });
+    let vendingmachinesIds = [];
+    for (let i = 0; i < vendingmachines.length; i++) {
+      vendingmachinesIds.push(vendingmachines[i].id);
+    }
+    Alert.findAll({
+      where: {
+        vendingmachineId: vendingmachinesIds,
+      },
+    })
+      .then((alert) => {
+        if (!alert) return res.status(400).send({ message: "No alert found" });
+        return res.send(returnAlerts(alert));
+      })
+      .catch((err) => {
+        return res
+          .status(500)
+          .send({ message: err.message || "Error retrieving alert" });
+      });
+  } else {
+    Alert.findAll()
+      .then((alert) => {
+        if (!alert) return res.status(400).send({ message: "No alert found" });
+        return res.send(returnAlerts(alert));
+      })
+      .catch((err) => {
+        return res
+          .status(500)
+          .send({ message: err.message || "Error retrieving alert" });
+      });
+  }
 };
 // Update a user
 // exports.update = async (req, res) => {
@@ -193,21 +237,47 @@ exports.delete = (req, res) => {
     .then((alert) => {
       if (!alert) {
         return res.status(400).send({
-          message: `Cannot delete alert with id=${id}. Maybe alert was not found!`,
+          message: `alert with id=${id} was not found!`,
         });
       } else {
-        alert
-          .destroy()
-          .then(() => {
-            return res.send({
-              message: "alert was deleted successfully!",
+        if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+          VendingMachine.findByPk(alert.vendingMachineId).then(
+            (vendingmachine) => {
+              if (vendingmachine.companyId != req.authUser.companyId) {
+                return res.status(400).send({
+                  message: "you cannot delete the alerts from other companies",
+                });
+              } else {
+                alert
+                  .destroy()
+                  .then(() => {
+                    return res.send({
+                      message: "alert was deleted successfully!",
+                    });
+                  })
+                  .catch((err) => {
+                    return res.status(500).send({
+                      message:
+                        err.message || "Could not delete alert with id=" + id,
+                    });
+                  });
+              }
+            }
+          );
+        } else {
+          alert
+            .destroy()
+            .then(() => {
+              return res.send({
+                message: "alert was deleted successfully!",
+              });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message: err.message || "Could not delete alert with id=" + id,
+              });
             });
-          })
-          .catch((err) => {
-            return res.status(500).send({
-              message: err.message || "Could not delete alert with id=" + id,
-            });
-          });
+        }
       }
     })
     .catch((err) => {

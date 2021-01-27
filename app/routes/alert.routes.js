@@ -4,15 +4,18 @@ module.exports = (app) => {
   var router = require("express").Router();
   const permission = require("../const/permissions");
   // Retrieve all users
-  router.post("/machineAbuse/:id", alert.machineMishandeld);
+  router.post(
+    "/machineAbuse/:id",
+    [
+      authJwt.verifyToken,
+      authJwt.hasPermission(permission.ALERT_CREATE_COMPANY),
+    ],
+    alert.machineMishandeld
+  );
 
-  //[authJwt.verifyToken||authJwt.hasPermission(permission.ALERT_CREATE)] is a test to see if the or statements works in the array
   router.get(
     "/alertsAuthUser",
-    [
-      authJwt.verifyToken ||
-        authJwt.hasPermission(permission.ALERT_CREATE_COMPANY),
-    ],
+    authJwt.verifyToken,
     alert.getAllAlertsFromUser
   );
 
