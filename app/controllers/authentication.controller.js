@@ -6,7 +6,6 @@ const { authJwt } = require("../middlewares/index");
 const User = db.user;
 const VendingMachine = db.vendingMachine;
 const { Op } = require("sequelize");
-const { vendingMachine, user } = require("./../models/index");
 
 //helper function to store user in db
 storeAuthenticationDatabase = (authentication, res) => {
@@ -142,7 +141,12 @@ exports.findByUserID = async (req, res) => {
         if (
           authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
         ) {
-          let user = await User.findByPk(data.userId);
+          let user;
+          try {
+            user = await User.findByPk(data.userId);
+          } catch (err) {
+            return res.status(500).send({ message: "Error retrieving user  " });
+          }
           if (user.companyId == req.authUser.companyId) {
             return res.send(returnAuthentication(data));
           } else {
@@ -182,12 +186,25 @@ exports.findOne = async (req, res) => {
           console.log(data.vendingMachineId);
           let vendingmachines = null;
           if (data.vendingMachineId != null) {
-            vendingmachines = await VendingMachine.findByPk(
-              data.vendingMachineId
-            );
+            try {
+              vendingmachines = await VendingMachine.findByPk(
+                data.vendingMachineId
+              );
+            } catch (err) {
+              return res
+                .status(500)
+                .send({ message: "Error retrieving vendingmachine " });
+            }
             console.log("vendingmachines2");
           }
-          let user = await User.findByPk(data.userId);
+          let user;
+          try {
+            user = await User.findByPk(data.userId);
+          } catch (err) {
+            return res
+              .status(500)
+              .send({ message: "Error retrieving vendingmachine " });
+          }
           if (
             user.companyId == req.authUser.companyId ||
             (vendingmachines &&
@@ -237,12 +254,25 @@ exports.findByAuthenticationString = (req, res) => {
           console.log(data.vendingMachineId);
           let vendingmachines = null;
           if (data.vendingMachineId != null) {
-            vendingmachines = await VendingMachine.findByPk(
-              data.vendingMachineId
-            );
+            try {
+              vendingmachines = await VendingMachine.findByPk(
+                data.vendingMachineId
+              );
+            } catch (err) {
+              return res
+                .status(500)
+                .send({ message: "Error retrieving vendingmachine" });
+            }
             console.log("vendingmachines2");
           }
-          let user = await User.findByPk(data.userId);
+          let user;
+          try {
+            user = await User.findByPk(data.userId);
+          } catch (err) {
+            return res.status(500).send({
+              message: "Error retrieving user with id: " + data.userId,
+            });
+          }
           if (
             user.companyId == req.authUser.companyId ||
             (vendingmachines &&
@@ -337,16 +367,28 @@ exports.update = async (req, res) => {
 // Find all users
 exports.findAll = async (req, res) => {
   if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
-    let vendingmachines = await VendingMachine.findAll({
-      where: { companyId: req.authUser.companyId },
-    });
+    let vendingmachines;
+    try {
+      vendingmachines = await VendingMachine.findAll({
+        where: { companyId: req.authUser.companyId },
+      });
+    } catch (err) {
+      return res.status(500).send({
+        message: "Error retrieving vendingmachines ",
+      });
+    }
     let vendingmachinesIds = [];
     for (let i = 0; i < vendingmachines.length; i++) {
       vendingmachinesIds.push(vendingmachines[i].id);
     }
-    let users = await User.findAll({
-      where: { companyId: req.authUser.companyId },
-    });
+    let users;
+    try {
+      users = await User.findAll({
+        where: { companyId: req.authUser.companyId },
+      });
+    } catch (err) {
+      return res.status(500).send({ message: "Error retrieving users " });
+    }
     let usersIds = [];
     for (let i = 0; i < users.length; i++) {
       usersIds.push(users[i].id);

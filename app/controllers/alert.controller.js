@@ -171,9 +171,16 @@ exports.findOne = (req, res) => {
 // Find all users
 exports.findAll = async (req, res) => {
   if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
-    let vendingmachines = await VendingMachine.findAll({
-      where: { companyId: req.authUser.companyId },
-    });
+    let vendingmachines;
+    try {
+      vendingmachines = await VendingMachine.findAll({
+        where: { companyId: req.authUser.companyId },
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .send({ message: "Error retrieving vendingmachines" });
+    }
     let vendingmachinesIds = [];
     for (let i = 0; i < vendingmachines.length; i++) {
       vendingmachinesIds.push(vendingmachines[i].id);

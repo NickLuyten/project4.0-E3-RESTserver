@@ -12,6 +12,8 @@ const Company = db.company;
 
 const User = db.user;
 
+const { authJwt } = require("../middlewares/index");
+const permission = require("../const/permissions");
 //helper function to validate userfields
 validateVendingMachineFields = (req, isRequired) => {
   // Validate request
@@ -174,10 +176,22 @@ exports.create = (req, res) => {
       .then((company) => {
         if (!company)
           return res.status(400).send({
-            message:
-              "The company for vendingmachine with id " + id + " was not found",
+            message: "The company for vendingmachine was not found",
           });
         else {
+          if (
+            authJwt.cehckIfPermission(
+              req,
+              permission.VENDING_MACHINE_CREATE_COMPANY
+            )
+          ) {
+            if (req.authUser.companyId != company.id) {
+              return res.status(400).send({
+                message:
+                  "Unautherized you can not create a vending machine for another company",
+              });
+            }
+          }
           // Create a user
           let vendingMachine = new VendingMachine({
             name: req.body.name,
@@ -210,7 +224,7 @@ exports.create = (req, res) => {
       })
       .catch((err) => {
         return res.status(500).send({
-          message: "error creating vendingmachine with id " + id,
+          message: "error creating vendingmachine error : " + err,
         });
       });
   }
@@ -227,6 +241,19 @@ exports.findOne = (req, res) => {
           .status(400)
           .send({ message: "Not found vending machine with id " + id });
       else {
+        if (
+          authJwt.cehckIfPermission(
+            req,
+            permission.VENDING_MACHINE_READ_COMPANY
+          )
+        ) {
+          if (req.authUser.companyId != data.companyId) {
+            return res.status(401).send({
+              message:
+                "Unautherized you cannot look at a vending machine of another company",
+            });
+          }
+        }
         console.log("data : " + JSON.stringify(data));
         return res.send(returnVendingMachine(data));
       }
@@ -241,9 +268,9 @@ exports.findOne = (req, res) => {
 exports.findVendingMachinesFromCompany = (req, res) => {
   const id = req.params.id;
   VendingMachine.findAll({
-    where:{
-      companyId:id
-    }
+    where: {
+      companyId: id,
+    },
   })
     .then((vendingMachines) => {
       if (!vendingMachines)
@@ -275,6 +302,25 @@ exports.update = async (req, res) => {
         message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
       });
     } else {
+      if (
+        authJwt.cehckIfPermission(
+          req,
+          permission.VENDING_MACHINE_CREATE_COMPANY
+        )
+      ) {
+        if (vendingMachine.companyId != req.authUser.companyId) {
+          return res.status(401).send({
+            message: `unautherized to update the vending machine with id:${id}`,
+          });
+        }
+        if (req.body.companyId) {
+          if (req.body.companyId != req.authUser.companyId) {
+            return res.status(401).send({
+              message: `unautherized to update the vending machine with id:${id}`,
+            });
+          }
+        }
+      }
       vendingMachine.update(req.body).then((updatedVendingMachine) => {
         if (!updatedVendingMachine) {
           return res.status(400).send({
@@ -534,6 +580,23 @@ exports.handgelbijvullen = async (req, res) => {
 
 // Find all users
 exports.findAll = (req, res) => {
+  if (authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ_COMPANY)) {
+    VendingMachine.findAll({
+      where: {
+        companyId: req.authUser.companyId,
+      },
+    })
+      .then((vendingMachines) => {
+        if (!vendingMachines)
+          return res.status(400).send({ message: "No vending machines found" });
+        return res.send(returnVendingMachines(vendingMachines));
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Error retrieving vending machines",
+        });
+      });
+  }
   VendingMachine.findAll()
     .then((vendingMachines) => {
       if (!vendingMachines)
@@ -578,8 +641,31 @@ exports.findAll = (req, res) => {
 //       });
 //     });
 // };
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
   const id = req.params.id;
+  if (authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ_COMPANY)) {
+    let vendingmachine;
+    try {
+      vendingmachine = await VendingMachine.findByPk(id);
+    } catch (err) {
+      return res.status(500).send({
+        message:
+          err.message || "Error retrieving vendingmachine with id: " + id,
+      });
+    }
+    if (!vendingmachine) {
+      return res.status(400).send({
+        message: `can not find vendingmachine`,
+      });
+    } else {
+      if (vendingmachine.companyId != req.authUser.companyId) {
+        return res.status(401).send({
+          message: `unautherized to update the vending machine with id:${id}`,
+        });
+      }
+    }
+  }
+
   UserThatReceiveAlertsFromVendingMachine.findAll({
     where: {
       vendingMachineId: id,

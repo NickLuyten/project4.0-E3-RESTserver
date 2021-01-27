@@ -1,5 +1,10 @@
 const db = require("./../models/index");
 const AutherizedUserPerMachine = db.autherizedUserPerMachine;
+const User = db.user;
+const VendingMachine = db.vendingMachine;
+const { authJwt } = require("../middlewares/index");
+const permission = require("../const/permissions");
+const { Op } = require("sequelize");
 
 //helper function to store user in db
 storeAutherizedUserPerMachine = (autherizedUserPerMachine, res) => {
@@ -38,20 +43,69 @@ returnAutherizedUserPerMachines = (data) => {
 
 // Create and Save a new user
 exports.create = (req, res) => {
-  console.log("create function autherizedUserPerMachine");
-  let autherizedUserPerMachine = new AutherizedUserPerMachine({
-    userId: req.body.userId,
-    vendingMachineId: req.body.vendingMachineId,
-  });
-  console.log(autherizedUserPerMachine);
-  autherizedUserPerMachine
-    .save()
-    .then((data) => {
-      return res.send(returnAutherizedUserPerMachine(data));
+  User.findByPk(req.body.userId)
+    .then((user) => {
+      if (!user) {
+        return res.status(400).send({
+          message: "User not found for create autherizedUserPermachine ",
+        });
+      } else {
+        VendingMachine.findByPk(req.body.vendingMachineId)
+          .then((vendingMachine) => {
+            if (!vendingMachine) {
+              return res.status(400).send({
+                message:
+                  "vendingmachine not found for create autherizedUserPermachine ",
+              });
+            } else {
+              if (
+                authJwt.cehckIfPermission(
+                  req,
+                  permission.AUTHENTICATION_CREATE_COMPANY
+                )
+              ) {
+                if (
+                  !(
+                    user.companyId == req.authUser.companyId &&
+                    vendingMachine.companyId == req.authUser.companyId
+                  )
+                ) {
+                  return res.status(400).send({
+                    message:
+                      "not autherzied to create autherizedUserPerMachine ",
+                  });
+                }
+              }
+              console.log("create function autherizedUserPerMachine");
+              let autherizedUserPerMachine = new AutherizedUserPerMachine({
+                userId: req.body.userId,
+                vendingMachineId: req.body.vendingMachineId,
+              });
+              console.log(autherizedUserPerMachine);
+              autherizedUserPerMachine
+                .save()
+                .then((data) => {
+                  return res.send(returnAutherizedUserPerMachine(data));
+                })
+                .catch((err) => {
+                  return res.status(500).send({
+                    message:
+                      "Error creating AutherizedUserPerMachine error :  " + err,
+                  });
+                });
+            }
+          })
+          .catch((err) => {
+            return res.status(500).send({
+              message:
+                "Error creating AutherizedUserPerMachine error :  " + err,
+            });
+          });
+      }
     })
-    .catch(() => {
+    .catch((err) => {
       return res.status(500).send({
-        message: "Error creating AutherizedUserPerMachine ",
+        message: "Error creating AutherizedUserPerMachine error :  " + err,
       });
     });
 };
@@ -67,8 +121,37 @@ exports.findOne = (req, res) => {
           message: "Not found AutherizedUserPerMachine with id " + id,
         });
       else {
-        console.log(data);
-        return res.send(returnAutherizedUserPerMachine(data));
+        VendingMachine.findByPk(data.vendingMachineId).then(
+          (vendingmachine) => {
+            if (!vendingmachine) {
+              return res.status(400).send({
+                message:
+                  "the machine for AutherizedUserPerMachine  with id " +
+                  id +
+                  " was not found",
+              });
+            } else {
+              console.log("test");
+              if (
+                authJwt.cehckIfPermission(
+                  req,
+                  permission.AUTHENTICATION_READ_COMPANY
+                )
+              ) {
+                if (vendingmachine.companyId != req.authUser.companyId) {
+                  return res.status(400).send({
+                    message:
+                      "Not autherized to see AutherizedUserPerMachine with id " +
+                      id +
+                      " because it is from another vending machine that doesn't belong to your company",
+                  });
+                }
+              }
+              console.log(data);
+              return res.send(returnAutherizedUserPerMachine(data));
+            }
+          }
+        );
       }
     })
     .catch((err) => {
@@ -79,46 +162,118 @@ exports.findOne = (req, res) => {
     });
 };
 // Find all users
-exports.findAll = (req, res) => {
-  AutherizedUserPerMachine.findAll()
-    .then((autherizedUserPerMachine) => {
-      if (!autherizedUserPerMachine)
-        return res
-          .status(400)
-          .send({ message: "No AutherizedUserPerMachine found" });
-      return res.send(
-        returnAutherizedUserPerMachines(autherizedUserPerMachine)
-      );
-    })
-    .catch((err) => {
-      return res.status(500).send({
-        message: err.message || "Error retrieving AutherizedUserPerMachine",
+exports.findAll = async (req, res) => {
+  if (authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)) {
+    let vendingmachines;
+    try {
+      vendingmachines = await VendingMachine.findAll({
+        where: { companyId: req.authUser.companyId },
       });
-    });
+    } catch (err) {
+      return res
+        .status(500)
+        .send({ message: "Error retrieving vendingmachines" });
+    }
+    let vendingmachinesIds = [];
+    for (let i = 0; i < vendingmachines.length; i++) {
+      vendingmachinesIds.push(vendingmachines[i].id);
+    }
+    let users;
+    try {
+      users = await User.findAll({
+        where: { companyId: req.authUser.companyId },
+      });
+    } catch (err) {
+      return res.status(500).send({ message: "Error retrieving users" });
+    }
+    let usersIds = [];
+    for (let i = 0; i < users.length; i++) {
+      usersIds.push(users[i].id);
+    }
+    console.log(usersIds);
+    AutherizedUserPerMachine.findAll({
+      where: {
+        [Op.or]: [
+          {
+            vendingMachineId: vendingmachinesIds,
+          },
+          { userId: usersIds },
+        ],
+      },
+    })
+      .then((autherizedUserPerMachine) => {
+        if (!autherizedUserPerMachine)
+          return res
+            .status(400)
+            .send({ message: "No AutherizedUserPerMachine found" });
+        return res.send(
+          returnAutherizedUserPerMachines(autherizedUserPerMachine)
+        );
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Error retrieving AutherizedUserPerMachine",
+        });
+      });
+  } else {
+    AutherizedUserPerMachine.findAll()
+      .then((autherizedUserPerMachine) => {
+        if (!autherizedUserPerMachine)
+          return res
+            .status(400)
+            .send({ message: "No AutherizedUserPerMachine found" });
+        return res.send(
+          returnAutherizedUserPerMachines(autherizedUserPerMachine)
+        );
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Error retrieving AutherizedUserPerMachine",
+        });
+      });
+  }
 };
 
 // Find all users
 exports.findAllAuthenticatedUsersForVendingMachine = (req, res) => {
   const id = req.params.id;
-  AutherizedUserPerMachine.findAll({
-    where: {
-      vendingMachineId: id,
-    },
-  })
-    .then((autherizedUserPerMachine) => {
-      if (!autherizedUserPerMachine)
-        return res
-          .status(400)
-          .send({ message: "No AutherizedUserPerMachine found" });
-      return res.send(
-        returnAutherizedUserPerMachines(autherizedUserPerMachine)
-      );
-    })
-    .catch((err) => {
-      return res.status(500).send({
-        message: err.message || "Error retrieving AutherizedUserPerMachine",
+  VendingMachine.findByPk(id).then((vendingMachine) => {
+    if (!vendingMachine) {
+      return res.status(400).send({
+        message: "vendingmachine for AutherizedUserPerMachine not found",
       });
-    });
+    } else {
+      if (
+        authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+      ) {
+        if (vendingMachine.companyId != req.authUser.companyId) {
+          return res.status(400).send({
+            message:
+              "not autherized to get AutherizedUserPerMachine for this vendingmachine because this vendingmachine is from another company",
+          });
+        }
+      }
+      AutherizedUserPerMachine.findAll({
+        where: {
+          vendingMachineId: id,
+        },
+      })
+        .then((autherizedUserPerMachine) => {
+          if (!autherizedUserPerMachine)
+            return res
+              .status(400)
+              .send({ message: "No AutherizedUserPerMachine found" });
+          return res.send(
+            returnAutherizedUserPerMachines(autherizedUserPerMachine)
+          );
+        })
+        .catch((err) => {
+          return res.status(500).send({
+            message: err.message || "Error retrieving AutherizedUserPerMachine",
+          });
+        });
+    }
+  });
 };
 
 // Delete a user with the specified id in the request
@@ -132,20 +287,60 @@ exports.delete = (req, res) => {
           message: `Cannot delete autherizedUserPerMachine with id=${id}. Maybe autherizedUserPerMachine was not found!`,
         });
       } else {
-        autherizedUserPerMachine
-          .destroy()
-          .then(() => {
-            return res.send({
-              message: "autherizedUserPerMachine was deleted successfully!",
-            });
-          })
-          .catch((err) => {
-            return res.status(500).send({
-              message:
-                err.message ||
-                "Could not delete autherizedUserPerMachine with id=" + id,
-            });
+        if (
+          authJwt.cehckIfPermission(
+            req,
+            permission.AUTHENTICATION_DELETE_COMPANY
+          )
+        ) {
+          VendingMachine.findByPk(
+            autherizedUserPerMachine.vendingMachineId
+          ).then((vendingmachine) => {
+            if (!vendingmachine) {
+              return res.status(400).send({
+                message: `Cannot delete autherizedUserPerMachine with id=${id}. because vendingmachine was not found!`,
+              });
+            } else {
+              if (vendingmachine.companyId != req.authUser.companyId) {
+                return res.status(400).send({
+                  message: `Cannot delete autherizedUserPerMachine with id=${id}. because vendingmachine doesn't belong to your company!`,
+                });
+              } else {
+                autherizedUserPerMachine
+                  .destroy()
+                  .then(() => {
+                    return res.send({
+                      message:
+                        "autherizedUserPerMachine was deleted successfully!",
+                    });
+                  })
+                  .catch((err) => {
+                    return res.status(500).send({
+                      message:
+                        err.message ||
+                        "Could not delete autherizedUserPerMachine with id=" +
+                          id,
+                    });
+                  });
+              }
+            }
           });
+        } else {
+          autherizedUserPerMachine
+            .destroy()
+            .then(() => {
+              return res.send({
+                message: "autherizedUserPerMachine was deleted successfully!",
+              });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message:
+                  err.message ||
+                  "Could not delete autherizedUserPerMachine with id=" + id,
+              });
+            });
+        }
       }
     })
     .catch((err) => {

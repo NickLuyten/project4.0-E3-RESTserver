@@ -1,6 +1,11 @@
 const db = require("../models/index");
 const UserThatReceiveAlertsFromVendingMachine =
   db.userThatReceiveAlertsFromVendingMachine;
+const User = db.user;
+const VendingMachine = db.vendingMachine;
+const { authJwt } = require("../middlewares/index");
+const permission = require("../const/permissions");
+const { Op } = require("sequelize");
 
 //helper function to store user in db
 storeUserThatReceiveAlertsFromVendingMachineDatabase = (
@@ -41,8 +46,51 @@ returnUserThatReceiveAlertsFromVendingMachines = (data) => {
 };
 
 // Create and Save a new user
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
   console.log("create function");
+  let user;
+  try {
+    user = await User.findByPk(req.body.userId);
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ message: "Error retrieving user with id: " + req.body.userId });
+  }
+  if (!user) {
+    return res.status(400).send({
+      message: "user doesn't exist",
+    });
+  }
+  let vendingmachine;
+  try {
+    vendingmachine = await VendingMachine.findByPk(req.body.vendingMachineId);
+  } catch (err) {
+    return res.status(500).send({
+      message:
+        "Error retrieving VendingMachine with id: " + req.body.vendingMachineId,
+    });
+  }
+  if (!vendingmachine) {
+    return res.status(400).send({
+      message: "vendingmachine doesn't exist",
+    });
+  }
+  if (
+    authJwt.cehckIfPermission(
+      req,
+      permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE_COMPANY
+    )
+  ) {
+    if (
+      user.companyId != req.authUser.companyId ||
+      vendingmachine.companyId != req.authUser.companyId
+    ) {
+      return res.status(400).send({
+        message:
+          "unautherized you can only create UserThatReceiveAlertsFromVendingMachine for users and vendingmachines of your company",
+      });
+    }
+  }
   UserThatReceiveAlertsFromVendingMachine.findOne({
     where: {
       userId: req.body.userId,
@@ -78,17 +126,50 @@ exports.create = (req, res) => {
 };
 
 // Find a single user with an id
-exports.findOne = (req, res) => {
+exports.findOne = async (req, res) => {
   const id = req.params.id;
 
   UserThatReceiveAlertsFromVendingMachine.findByPk(id)
-    .then((data) => {
+    .then(async (data) => {
       if (!data)
         return res.status(400).send({
           message:
             "Not found UserThatReceiveAlertsFromVendingMachine with id " + id,
         });
       else {
+        if (
+          authJwt.cehckIfPermission(
+            req,
+            permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_READ_COMPANY
+          )
+        ) {
+          let vendingmachine;
+          try {
+            vendingmachine = await VendingMachine.findByPk(
+              data.vendingMachineId
+            );
+          } catch (err) {
+            return res.status(500).send({
+              message:
+                "Error retrieving VendingMachine with id: " +
+                data.vendingMachineId,
+            });
+          }
+          if (!vendingmachine) {
+            return res.status(400).send({
+              message:
+                "vending machine not found for UserThatReceiveAlertsFromVendingMachine with id " +
+                id,
+            });
+          } else {
+            if (vendingmachine.companyId != req.authUser.companyId) {
+              return res.status(400).send({
+                message:
+                  "unautherized vending machine is from another company ",
+              });
+            }
+          }
+        }
         console.log(data);
         return res.send(returnUserThatReceiveAlertsFromVendingMachine(data));
       }
@@ -139,38 +220,132 @@ exports.update = async (req, res) => {
 };
 
 // Find all users
-exports.findAll = (req, res) => {
-  UserThatReceiveAlertsFromVendingMachine.findAll()
-    .then((userThatReceiveAlertsFromVendingMachine) => {
-      if (!userThatReceiveAlertsFromVendingMachine)
-        return res.status(400).send({
-          message: "No userThatReceiveAlertsFromVendingMachine found",
-        });
-      return res.send(
-        returnUserThatReceiveAlertsFromVendingMachines(
-          userThatReceiveAlertsFromVendingMachine
-        )
-      );
-    })
-    .catch((err) => {
-      return res.status(500).send({
-        message:
-          err || "Error retrieving userThatReceiveAlertsFromVendingMachine",
+exports.findAll = async (req, res) => {
+  if (
+    authJwt.cehckIfPermission(
+      req,
+      permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE_COMPANY
+    )
+  ) {
+    let vendingmachines;
+    try {
+      vendingmachines = await VendingMachine.findAll({
+        where: { companyId: req.authUser.companyId },
       });
-    });
+    } catch (err) {
+      return res.status(500).send({
+        message: "Error retrieving VendingMachines",
+      });
+    }
+    let vendingmachinesIds = [];
+    for (let i = 0; i < vendingmachines.length; i++) {
+      vendingmachinesIds.push(vendingmachines[i].id);
+    }
+    let users;
+    try {
+      users = await User.findAll({
+        where: { companyId: req.authUser.companyId },
+      });
+    } catch (err) {
+      return res.status(500).send({ message: "Error retrieving users" });
+    }
+    let usersIds = [];
+    for (let i = 0; i < users.length; i++) {
+      usersIds.push(users[i].id);
+    }
+
+    UserThatReceiveAlertsFromVendingMachine.findAll({
+      where: {
+        [Op.or]: [
+          {
+            vendingMachineId: vendingmachinesIds,
+          },
+          { userId: usersIds },
+        ],
+      },
+    })
+      .then((userThatReceiveAlertsFromVendingMachine) => {
+        if (!userThatReceiveAlertsFromVendingMachine)
+          return res.status(400).send({
+            message: "No userThatReceiveAlertsFromVendingMachine found",
+          });
+        return res.send(
+          returnUserThatReceiveAlertsFromVendingMachines(
+            userThatReceiveAlertsFromVendingMachine
+          )
+        );
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message:
+            err || "Error retrieving userThatReceiveAlertsFromVendingMachine",
+        });
+      });
+  } else {
+    UserThatReceiveAlertsFromVendingMachine.findAll()
+      .then((userThatReceiveAlertsFromVendingMachine) => {
+        if (!userThatReceiveAlertsFromVendingMachine)
+          return res.status(400).send({
+            message: "No userThatReceiveAlertsFromVendingMachine found",
+          });
+        return res.send(
+          returnUserThatReceiveAlertsFromVendingMachines(
+            userThatReceiveAlertsFromVendingMachine
+          )
+        );
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message:
+            err || "Error retrieving userThatReceiveAlertsFromVendingMachine",
+        });
+      });
+  }
 };
 
 // Delete a user with the specified id in the request
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
   const id = req.params.id;
 
   UserThatReceiveAlertsFromVendingMachine.findByPk(id)
-    .then((userThatReceiveAlertsFromVendingMachine) => {
+    .then(async (userThatReceiveAlertsFromVendingMachine) => {
       if (!userThatReceiveAlertsFromVendingMachine) {
         return res.status(400).send({
           message: `Cannot delete userThatReceiveAlertsFromVendingMachine with id=${id}. Maybe userThatReceiveAlertsFromVendingMachine was not found!`,
         });
       } else {
+        if (
+          authJwt.cehckIfPermission(
+            req,
+            permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_DELETE_COMPANY
+          )
+        ) {
+          let vendingMachine;
+          try {
+            vendingMachine = await VendingMachine.findByPk(
+              userThatReceiveAlertsFromVendingMachine.vendingMachineId
+            );
+          } catch (err) {
+            return res.status(500).send({
+              message:
+                err.message ||
+                "Error retrieving vendingmachine with id: " +
+                  id +
+                  " while doing userThatReceiveAletrsFromVendingMachine",
+            });
+          }
+          if (!vendingMachine) {
+            return res.status(400).send({
+              message: `Cannot find vendingMachine for userThatReceiveAlertsFromVendingMachine with id=${id}.`,
+            });
+          } else {
+            if (vendingMachine.companyId != req.authUser.companyId) {
+              return res.status(400).send({
+                message: `unautherized to delete userThatReceiveAlertsFromVendingMachine with id=${id}.`,
+              });
+            }
+          }
+        }
         userThatReceiveAlertsFromVendingMachine
           .destroy()
           .then(() => {

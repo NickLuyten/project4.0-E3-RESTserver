@@ -128,8 +128,7 @@ hasUserPriviliges = (req, res, next) => {
 //   };
 // };
 
-hasPermission = (permission, checkIfUser = 0) => {
-  console.log("hasPermission");
+hasPermission = (permission, checkIfUser = 0, checkifUserInCompany = 0) => {
   return (req, res, next) => {
     if (!isTokenPresent(req)) {
       return res.status(401).send({ message: "No token provided!" });
@@ -141,6 +140,12 @@ hasPermission = (permission, checkIfUser = 0) => {
       }
       User.findByPk(decoded.id).then((user) => {
         req.authUser = user;
+        if (checkifUserInCompany) {
+          if (req.authUser.companyId == req.params.id) {
+            next();
+            return;
+          }
+        }
         if (checkIfUser) {
           if (req.authUser.id == req.params.id) {
             next();
