@@ -6,12 +6,14 @@ const Authentication = db.authentication;
 const AutherizedUserPerMachine = db.autherizedUserPerMachine;
 const UserThatReceiveAlertsFromVendingMachine =
   db.userThatReceiveAlertsFromVendingMachine;
+
+const { authJwt } = require("../middlewares/index");
+const permission = require("../const/permissions");
 // const { test } = require("../const/permissions");
 // const { adminPermissions, userPermissions } = require("../const/permissions");
 
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
-const { autherizedUserPerMachine } = require("./../models/index");
 const permissions = require("../const/permissions");
 
 //helper function to validate userfields
@@ -183,9 +185,18 @@ exports.create = (req, res) => {
       req.body.guest = false;
     }
     if (!req.body.permissions) {
-      req.body.permissions = [];
+      req.body.permissions = JSON.stringify([]);
     }
     console.log("req.body.companyId : " + req.body.companyId);
+
+    if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+      if (req.body.companyId != req.authUser.companyId) {
+        return res.status(400).send({
+          message: "unautherized you can only create users for your company",
+        });
+      }
+    }
+
     Company.findByPk(req.body.companyId)
       .then((company) => {
         console.log("company");
@@ -252,6 +263,7 @@ exports.create = (req, res) => {
                 guest: req.body.guest,
                 companyId: req.body.companyId,
                 sanitizerLimitPerMonth: 0,
+                permissions: JSON.stringify(permissionsRequest),
               });
 
               User.findOne({
@@ -351,6 +363,14 @@ exports.findOne = (req, res) => {
           .status(400)
           .send({ message: "Not found user with id " + id });
       else {
+        if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+          if (data.companyId != req.authUser.companyId) {
+            return res.status(400).send({
+              message:
+                "unautherized you can only create users for your company",
+            });
+          }
+        }
         console.log("data : " + JSON.stringify(data));
         return res.send(returnUserLimited(data));
       }
@@ -378,6 +398,13 @@ exports.update = async (req, res) => {
     req.body.password = bcrypt.hashSync(req.body.password, 8);
   }
   if (req.body.companyId) {
+    if (authJwt.cehckIfPermission(req, permission.USER_UPDATE_COMPANY)) {
+      if (req.body.companyId != req.authUser.companyId) {
+        return res.status(400).send({
+          message: `unautherized you can not update the company of a user`,
+        });
+      }
+    }
     let company;
     try {
       company = await Company.findByPk(req.body.companyId);
@@ -453,6 +480,13 @@ exports.update = async (req, res) => {
         message: `Cannot get user with id=${id}. Maybe user was not found!`,
       });
     } else {
+      if (authJwt.cehckIfPermission(req, permission.USER_UPDATE_COMPANY)) {
+        if (user.companyId != req.authUser.companyId) {
+          return res.status(400).send({
+            message: `unautherized you can not update the user of another company`,
+          });
+        }
+      }
       user.update(req.body).then((updatedUser) => {
         if (!updatedUser) {
           return res.status(400).send({
@@ -500,6 +534,13 @@ exports.updatePassword = async (req, res) => {
         message: `Cannot get user with id=${id}. Maybe user was not found!`,
       });
     } else {
+      if (authJwt.cehckIfPermission(req, permission.USER_UPDATE_COMPANY)) {
+        if (user.companyId != req.authUser.companyId) {
+          return res.status(400).send({
+            message: `unautherized you can not update the user of another company`,
+          });
+        }
+      }
       user.password = req.body.password;
       user.save().then((updatedUser) => {
         if (!updatedUser) {
@@ -517,16 +558,33 @@ exports.updatePassword = async (req, res) => {
 // Find all users
 exports.findAll = (req, res) => {
   console.log("user model : " + User);
-  User.findAll()
-    .then((users) => {
-      if (!users) return res.status(400).send({ message: "No users found" });
-      return res.send(returnUsers(users));
+  if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+    User.findAll({
+      where: {
+        companyId: req.authUser.companyId,
+      },
     })
-    .catch((err) => {
-      return res
-        .status(500)
-        .send({ message: err.message || "Error retrieving users" });
-    });
+      .then((users) => {
+        if (!users) return res.status(400).send({ message: "No users found" });
+        return res.send(returnUsers(users));
+      })
+      .catch((err) => {
+        return res
+          .status(500)
+          .send({ message: err.message || "Error retrieving users" });
+      });
+  } else {
+    User.findAll()
+      .then((users) => {
+        if (!users) return res.status(400).send({ message: "No users found" });
+        return res.send(returnUsers(users));
+      })
+      .catch((err) => {
+        return res
+          .status(500)
+          .send({ message: err.message || "Error retrieving users" });
+      });
+  }
 };
 
 // Delete a user with the specified id in the request
@@ -559,8 +617,27 @@ exports.findAll = (req, res) => {
 //       });
 //     });
 // };
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
   const id = req.params.id;
+  let checkifUserFromSameCompany;
+  try {
+    checkifUserFromSameCompany = await User.findByPk(id);
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ message: "Error retrieving user with id: " + id });
+  }
+  if (!checkifUserFromSameCompany) {
+  } else {
+    if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+      if (checkifUserFromSameCompany.companyId != req.authUser.companyId) {
+        return res.status(400).send({
+          message: `unautherized you can not delete the user of another company`,
+        });
+      }
+    }
+  }
+
   Authentication.findAll({
     where: {
       userId: id,

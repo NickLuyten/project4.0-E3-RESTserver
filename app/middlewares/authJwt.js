@@ -14,6 +14,7 @@ extractToken = (req) => {
 };
 
 verifyToken = (req, res, next) => {
+  console.log("this.verifyToken");
   if (!isTokenPresent(req)) {
     return res.status(401).send({ message: "No token provided!" });
   }
@@ -30,6 +31,7 @@ verifyToken = (req, res, next) => {
 };
 
 verifyTokenIfPresent = (req, res, next) => {
+  console.log("verifyTokenIfPresent");
   if (!isTokenPresent(req)) {
     next();
     return;
@@ -47,6 +49,7 @@ verifyTokenIfPresent = (req, res, next) => {
 };
 //basically if admin than continue
 isAdmin = (req, res, next) => {
+  console.log("isAdmin");
   if (!isTokenPresent(req)) {
     return res.status(401).send({ message: "No token provided!" });
   }
@@ -72,6 +75,7 @@ isAdmin = (req, res, next) => {
 };
 
 hasUserPriviliges = (req, res, next) => {
+  console.log("hasUserPriviliges");
   if (!isTokenPresent(req)) {
     return res.status(401).send({ message: "No token provided!" });
   }
@@ -94,7 +98,37 @@ hasUserPriviliges = (req, res, next) => {
 };
 
 //basically if admin than continue
-hasPermission = (permission) => {
+// hasPermission = (permission) => {
+//   console.log("hasPermission");
+//   return (req, res, next) => {
+//     if (!isTokenPresent(req)) {
+//       return res.status(401).send({ message: "No token provided!" });
+//     }
+//     let token = extractToken(req);
+//     jwt.verify(token, config.secret, (err, decoded) => {
+//       if (err) {
+//         return res.status(403).send({ message: "Access denied." });
+//       }
+//       User.findByPk(decoded.id).then((user) => {
+//         req.authUser = user;
+//         if (user.permissions.includes(permission)) {
+//           next();
+//         } else {
+//           let alternatif = permission.replace("_COMPANY", "");
+//           if (user.permissions.includes(alternatif)) {
+//             next();
+//           } else {
+//             return res
+//               .status(403)
+//               .send({ message: "Route requires privileges" });
+//           }
+//         }
+//       });
+//     });
+//   };
+// };
+
+hasPermission = (permission, checkIfUser = 0, checkifUserInCompany = 0) => {
   return (req, res, next) => {
     if (!isTokenPresent(req)) {
       return res.status(401).send({ message: "No token provided!" });
@@ -104,18 +138,35 @@ hasPermission = (permission) => {
       if (err) {
         return res.status(403).send({ message: "Access denied." });
       }
-      User.findById(decoded.id).then((user) => {
+      User.findByPk(decoded.id).then((user) => {
         req.authUser = user;
+        if (checkifUserInCompany) {
+          if (req.authUser.companyId == req.params.id) {
+            next();
+            return;
+          }
+        }
+        if (checkIfUser) {
+          if (req.authUser.id == req.params.id) {
+            next();
+            return;
+          }
+        }
         if (user.permissions.includes(permission)) {
           next();
         } else {
-          let alternatif = permissionsRequest[i].replace("_COMPANY", "");
+          let alternatif = permission.replace("_OWN", "");
           if (user.permissions.includes(alternatif)) {
             next();
           } else {
-            return res
-              .status(403)
-              .send({ message: "Route requires privileges" });
+            alternatif = alternatif.replace("_COMPANY", "");
+            if (user.permissions.includes(alternatif)) {
+              next();
+            } else {
+              return res
+                .status(403)
+                .send({ message: "Route requires privileges" });
+            }
           }
         }
       });
@@ -180,7 +231,7 @@ isUserOrAdmin = (req, res, next) => {
   }
 };
 
-cehckIfPermission = (permission) => {
+cehckIfPermission = (req, permission) => {
   if (req.authUser.permissions.includes(permission)) {
     return true;
   } else {
@@ -195,6 +246,8 @@ const authJwt = {
   hasUserPriviliges,
   isUserOrAdmin,
   hasPermission,
+  cehckIfPermission,
+  // hasPermissioncreateAuthentication,
   // hasPermissionOrIsUserItself,
   // hasPermissionMatchScore,
 };
