@@ -35,6 +35,10 @@ module.exports = (Sequelize, sequelize) => {
       type: Sequelize.STRING,
       allowNull: false,
     },
+    limitHandSanitizerReacedMessage: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
     errorMessage: {
       type: Sequelize.STRING,
       allowNull: false,
@@ -42,6 +46,9 @@ module.exports = (Sequelize, sequelize) => {
     stock: {
       type: Sequelize.INTEGER,
       allowNull: false,
+    },
+    alertLimit: {
+      type: Sequelize.INTEGER,
     },
   });
 
