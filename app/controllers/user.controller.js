@@ -338,7 +338,7 @@ exports.authenticate = (req, res) => {
       );
 
       if (!passwordIsValid) {
-        return res.send({
+        return res.status(400).send({
           error: "Het wachtwoord is verkeerd.",
         });
       }
