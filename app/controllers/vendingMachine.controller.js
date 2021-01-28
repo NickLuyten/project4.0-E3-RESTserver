@@ -90,6 +90,24 @@ validateVendingMachineFields = (req, isRequired) => {
     validationMessages.push("stock is required.");
   }
 
+  if (!req.body.stock && isRequired) {
+    validationMessages.push("stock is required.");
+  }
+  if (!req.body.limitHandSanitizerReacedMessage && isRequired) {
+    validationMessages.push("limitHandSanitizerReacedMessage is required.");
+  }
+  if (!req.body.alertLimit && isRequired) {
+    validationMessages.push("alertLimit is required.");
+  }
+
+  if (req.body.stock && req.body.maxNumberOfProducts) {
+    if (req.body.stock > req.body.maxNumberOfProducts) {
+      validationMessages.push(
+        "the vendingmachines stock can't be higher then it max number of products"
+      );
+    }
+  }
+
   return validationMessages;
 };
 
@@ -120,6 +138,8 @@ returnVendingMachine = (data) => {
       handGelOutOfStockMessage: data.handGelOutOfStockMessage,
       authenticationFailedMessage: data.authenticationFailedMessage,
       errorMessage: data.errorMessage,
+      limitHandSanitizerReacedMessage: data.limitHandSanitizerReacedMessage,
+      alertLimit: data.alertLimit,
       stock: data.stock,
       companyId: data.companyId,
     },
@@ -138,6 +158,8 @@ returnVendingMachines = (data) => {
       handGelOutOfStockMessage: data.handGelOutOfStockMessage,
       authenticationFailedMessage: data.authenticationFailedMessage,
       errorMessage: data.errorMessage,
+      limitHandSanitizerReacedMessage: data.limitHandSanitizerReacedMessage,
+      alertLimit: data.alertLimit,
       stock: data.stock,
       companyId: data.companyId,
     })),
@@ -156,6 +178,8 @@ returnVendingMachines = (data) => {
       handGelOutOfStockMessage: data.handGelOutOfStockMessage,
       authenticationFailedMessage: data.authenticationFailedMessage,
       errorMessage: data.errorMessage,
+      limitHandSanitizerReacedMessage: data.limitHandSanitizerReacedMessage,
+      alertLimit: data.alertLimit,
       stock: data.stock,
       companyId: data.companyId,
     })),
@@ -202,6 +226,9 @@ exports.create = (req, res) => {
             handGelOutOfStockMessage: req.body.handGelOutOfStockMessage,
             authenticationFailedMessage: req.body.authenticationFailedMessage,
             errorMessage: req.body.errorMessage,
+            limitHandSanitizerReacedMessage:
+              req.body.limitHandSanitizerReacedMessage,
+            alertLimit: req.body.alertLimit,
             stock: req.body.stock,
             companyId: req.body.companyId,
           });
@@ -302,6 +329,31 @@ exports.update = async (req, res) => {
         message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
       });
     } else {
+      if (req.body.stock || req.body.maxNumberOfProducts) {
+        if (
+          req.body.stock &&
+          req.body.maxNumberOfProducts &&
+          req.body.stock > req.body.maxNumberOfProducts
+        ) {
+          return res.status(400).send({
+            message: `the vendingmachines stock can't be higher then it max number of products!`,
+          });
+        } else if (
+          req.body.stock &&
+          req.body.stock > vendingMachine.maxNumberOfProducts
+        ) {
+          return res.status(400).send({
+            message: `the vendingmachines stock can't be higher then it max number of products!`,
+          });
+        } else if (
+          req.body.maxNumberOfProducts &&
+          req.body.maxNumberOfProducts < vendingMachine.stock
+        ) {
+          return res.status(400).send({
+            message: `the vendingmachines stock can't be higher then it max number of products!`,
+          });
+        }
+      }
       if (
         authJwt.cehckIfPermission(
           req,
@@ -445,14 +497,16 @@ exports.handgelAfhalen = async (req, res) => {
                           });
                         } else {
                           if (vendingMachine.stock > 0) {
-                            if (vendingMachine.stock < 4) {
+                            vendingMachine.stock = vendingMachine.stock - 1;
+                            if (
+                              vendingMachine.stock == vendingMachine.alertLimit
+                            ) {
                               console.log("alert melding ");
                               vendingMachine.createAlert({
                                 type: alertTypes.stock,
                                 melding: "stock is running low",
                               });
                             }
-                            vendingMachine.stock = vendingMachine.stock - 1;
                             vendingMachine
                               .save()
                               .then((updatedVendingMachine) => {
