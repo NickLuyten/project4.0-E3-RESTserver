@@ -235,12 +235,16 @@ exports.create = (req, res) => {
             console.log(authUserPermission);
             console.log(permissionsRequest);
 
+            let alternatif;
             for (let i = 0; i < permissionsRequest.length; i++) {
               if (authUserPermission.indexOf(permissionsRequest[i]) == -1) {
-                let alternatif = permissionsRequest[i].replace("_COMPANY", "");
+                alternatif = permissionsRequest[i].replace("_OWN", "");
                 if (authUserPermission.indexOf(alternatif) == -1) {
-                  ToHighPermissions = true;
-                  i = permissionsRequest.length;
+                  alternatif = alternatif.replace("_COMPANY", "");
+                  if (authUserPermission.indexOf(alternatif) == -1) {
+                    ToHighPermissions = true;
+                    i = permissionsRequest.length;
+                  }
                 }
               }
             }
