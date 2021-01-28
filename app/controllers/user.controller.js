@@ -835,6 +835,7 @@ exports.createAdmin = (req, res) => {
       password: bcrypt.hashSync(req.body.password, 8),
       admin: req.body.admin,
       sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
+      companyId: req.body.companyId,
       permissions: JSON.stringify(permissions.adminPermissions),
     });
     User.findOne({
