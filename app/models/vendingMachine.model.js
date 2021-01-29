@@ -9,7 +9,7 @@ module.exports = (Sequelize, sequelize) => {
     name: {
       type: Sequelize.STRING,
       allowNull: false,
-      unique: true,
+      // unique: true,
     },
     maxNumberOfProducts: {
       type: Sequelize.INTEGER,
@@ -49,6 +49,11 @@ module.exports = (Sequelize, sequelize) => {
     },
     alertLimit: {
       type: Sequelize.INTEGER,
+    },
+    apiKey: {
+      type: Sequelize.STRING,
+      allowNull: false,
+      unique: true,
     },
   });
 

@@ -24,6 +24,12 @@ module.exports = (app) => {
     vendingMachine.findAll
   );
 
+  router.get(
+    "/testApiKey",
+    authJwt.isVendingMachine,
+    vendingMachine.testApiKey
+  );
+
   // Retrieve a single user with id
   router.get(
     "/:id",
@@ -52,10 +58,22 @@ module.exports = (app) => {
     ],
     vendingMachine.update
   );
-
+  router.put(
+    "/apiKey/:id",
+    [
+      authJwt.verifyToken,
+      authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY),
+    ],
+    vendingMachine.updateApiKey
+  );
   //handgel afnemen
-  router.put("/handgelAfnemen/:id", vendingMachine.handgelAfhalen);
-  router.put("/handgelBijVullen/:id", vendingMachine.handgelbijvullen);
+  router.put(
+    "/handgelAfnemen/",
+    authJwt.isVendingMachine,
+    vendingMachine.handgelAfhalen
+  );
+  router.put("/handgelBijVullen/:id",[ authJwt.verifyToken,
+    (authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY)||authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY_REFILL))], vendingMachine.handgelbijvullen);
 
   // Delete a user with id
   router.delete(

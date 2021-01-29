@@ -277,6 +277,88 @@ exports.findAllAuthenticatedUsersForVendingMachine = (req, res) => {
 };
 
 // Delete a user with the specified id in the request
+exports.deleteWithVendingMachineAndUser = (req, res) => {
+  const vendingmachineId = req.params.vendingMachineId;
+  const userId = req.params.userId;
+
+  AutherizedUserPerMachine.findOne({
+    where: {
+      userId: userId,
+      vendingMachineId: vendingmachineId,
+    },
+  })
+    .then((autherizedUserPerMachine) => {
+      if (!autherizedUserPerMachine) {
+        return res.status(400).send({
+          message: `Cannot delete autherizedUserPerMachine with vendingmachine id=${vendingmachineId} and userId=${userId}. Maybe autherizedUserPerMachine was not found!`,
+        });
+      } else {
+        const id = autherizedUserPerMachine.id;
+        if (
+          authJwt.cehckIfPermission(
+            req,
+            permission.AUTHENTICATION_DELETE_COMPANY
+          )
+        ) {
+          VendingMachine.findByPk(
+            autherizedUserPerMachine.vendingMachineId
+          ).then((vendingmachine) => {
+            if (!vendingmachine) {
+              return res.status(400).send({
+                message: `Cannot delete autherizedUserPerMachine with id=${id}. because vendingmachine was not found!`,
+              });
+            } else {
+              if (vendingmachine.companyId != req.authUser.companyId) {
+                return res.status(400).send({
+                  message: `Cannot delete autherizedUserPerMachine with id=${id}. because vendingmachine doesn't belong to your company!`,
+                });
+              } else {
+                autherizedUserPerMachine
+                  .destroy()
+                  .then(() => {
+                    return res.send({
+                      message:
+                        "autherizedUserPerMachine was deleted successfully!",
+                    });
+                  })
+                  .catch((err) => {
+                    return res.status(500).send({
+                      message:
+                        err.message ||
+                        "Could not delete autherizedUserPerMachine with id=" +
+                          id,
+                    });
+                  });
+              }
+            }
+          });
+        } else {
+          autherizedUserPerMachine
+            .destroy()
+            .then(() => {
+              return res.send({
+                message: "autherizedUserPerMachine was deleted successfully!",
+              });
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message:
+                  err.message ||
+                  "Could not delete autherizedUserPerMachine with id=" + id,
+              });
+            });
+        }
+      }
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message:
+          err.message ||
+          "Could not find autherizedUserPerMachine with id=" + id,
+      });
+    });
+};
+
 exports.delete = (req, res) => {
   const id = req.params.id;
 

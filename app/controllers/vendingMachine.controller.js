@@ -5,6 +5,7 @@ const AutherizedUserPerMachine = db.autherizedUserPerMachine;
 const Alert = db.alert;
 const alertTypes = require("./../const/alertTypes");
 const { Op } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
 const UserThatReceiveAlertsFromVendingMachine =
   db.userThatReceiveAlertsFromVendingMachine;
@@ -126,6 +127,27 @@ storeVendingMachineInDatabase = (vendingMachine, res) => {
       });
     });
 };
+returnVendingMachineWithApiKey = (data) => {
+  return {
+    result: {
+      id: data.id,
+      name: data.name,
+      maxNumberOfProducts: data.maxNumberOfProducts,
+      location: data.location,
+      welcomeMessage: data.welcomeMessage,
+      handGelMessage: data.handGelMessage,
+      handGelOutOfStockMessage: data.handGelOutOfStockMessage,
+      authenticationFailedMessage: data.authenticationFailedMessage,
+      errorMessage: data.errorMessage,
+      limitHandSanitizerReacedMessage: data.limitHandSanitizerReacedMessage,
+      alertLimit: data.alertLimit,
+      stock: data.stock,
+      companyId: data.companyId,
+      apiKey: data.apiKey,
+    },
+  };
+};
+
 returnVendingMachine = (data) => {
   return {
     result: {
@@ -231,22 +253,23 @@ exports.create = (req, res) => {
             alertLimit: req.body.alertLimit,
             stock: req.body.stock,
             companyId: req.body.companyId,
+            apiKey: uuidv4(),
           });
 
-          VendingMachine.findOne({
-            where: {
-              name: req.body.name,
-            },
-          }).then((response) => {
-            console.log("response : " + response);
-            if (response == null || response.length == 0) {
-              storeVendingMachineInDatabase(vendingMachine, res);
-            } else {
-              return res.status(400).send({
-                message: `Already exists an vending machine with this name: ${vendingMachine.name}`,
-              });
-            }
-          });
+          // VendingMachine.findOne({
+          //   where: {
+          //     name: req.body.name,
+          //   },
+          // }).then((response) => {
+          //   console.log("response : " + response);
+          //   if (response == null || response.length == 0) {
+          storeVendingMachineInDatabase(vendingMachine, res);
+          // } else {
+          //   return res.status(400).send({
+          //     message: `Already exists an vending machine with this name: ${vendingMachine.name}`,
+          //   });
+          // }
+          // });
         }
       })
       .catch((err) => {
@@ -256,7 +279,15 @@ exports.create = (req, res) => {
       });
   }
 };
-
+exports.testApiKey = (req, res) => {
+  if (req.authVendingMachine != null) {
+    return { result: true };
+  } else {
+    return res.status(400).send({
+      message: "test api key failed authVendingMachine doens't exist",
+    });
+  }
+};
 // Find a single user with an id
 exports.findOne = (req, res) => {
   const id = req.params.id;
@@ -357,7 +388,7 @@ exports.update = async (req, res) => {
       if (
         authJwt.cehckIfPermission(
           req,
-          permission.VENDING_MACHINE_CREATE_COMPANY
+          permission.VENDING_MACHINE_UPDATE_COMPANY
         )
       ) {
         if (vendingMachine.companyId != req.authUser.companyId) {
@@ -407,6 +438,44 @@ exports.update = async (req, res) => {
     }
   });
 };
+
+exports.updateApiKey = async (req, res) => {
+  // If request not valid, return messages
+  const id = req.params.id;
+  VendingMachine.findByPk(id).then((vendingMachine) => {
+    if (!vendingMachine) {
+      return res.status(400).send({
+        message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
+      });
+    } else {
+      if (
+        authJwt.cehckIfPermission(
+          req,
+          permission.VENDING_MACHINE_UPDATE_COMPANY
+        )
+      ) {
+        if (vendingMachine.companyId != req.authUser.companyId) {
+          return res.status(401).send({
+            message: `unautherized to update the vending machine with id:${id}`,
+          });
+        }
+      }
+      vendingMachine.apiKey = uuidv4();
+      vendingMachine.update(vendingMachine).then((updatedVendingMachine) => {
+        if (!updatedVendingMachine) {
+          return res.status(400).send({
+            message: `Cannot updated vending machine with id=${id}`,
+          });
+        } else {
+          return res.send(
+            returnVendingMachineWithApiKey(updatedVendingMachine)
+          );
+        }
+      });
+    }
+  });
+};
+
 userAutherizedForVendingmachine = (userId, vendingMachineId) => {
   UserAutherizedForVendingmachine.findOne({
     where: {
@@ -425,8 +494,7 @@ userAutherizedForVendingmachine = (userId, vendingMachineId) => {
 };
 //handgelafhalen
 exports.handgelAfhalen = async (req, res) => {
-  const id = req.params.id;
-
+  const id = req.authVendingMachine.id;
   const uuid = req.body.authentication;
   console.log("uuid");
   console.log(uuid);
@@ -596,6 +664,23 @@ exports.handgelbijvullen = async (req, res) => {
           message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
         });
       } else {
+        if (
+          authJwt.cehckIfPermission(
+            req,
+            permission.VENDING_MACHINE_UPDATE_COMPANY_REFILL
+          ) ||
+          authJwt.cehckIfPermission(
+            req,
+            permission.VENDING_MACHINE_UPDATE_COMPANY
+          )
+        ) {
+          if (req.authUser.companyId != vendingMachine.companyId) {
+            return res.status(400).send({
+              message: `unautherized you cannot updated this vending machine!`,
+            });
+          }
+        }
+
         console.log("bijvullen");
         vendingMachine.stock = vendingMachine.maxNumberOfProducts;
         vendingMachine

@@ -5,10 +5,9 @@ module.exports = (app) => {
   const permission = require("../const/permissions");
   // Retrieve all users
   router.post(
-    "/machineAbuse/:id",
+    "/machineAbuse",
     [
-      authJwt.verifyToken,
-      authJwt.hasPermission(permission.ALERT_CREATE_COMPANY),
+      authJwt.isVendingMachine,
     ],
     alert.machineMishandeld
   );
