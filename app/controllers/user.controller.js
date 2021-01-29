@@ -118,6 +118,7 @@ returnUserWithToken = (data) => {
       companyId: data.companyId,
       accessToken: createToken(data),
       permissions: JSON.parse(data.permissions),
+      sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
     },
   };
 };
@@ -134,6 +135,7 @@ returnUserLimited = (data) => {
       guest: data.guest,
       companyId: data.companyId,
       permissions: JSON.parse(data.permissions),
+      sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
     },
   };
 };
@@ -147,6 +149,7 @@ returnUserLimitedLocal = (data) => {
     admin: data.admin,
     guest: data.guest,
     companyId: data.companyId,
+    sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
     // dateOfBirth: data.dateOfBirth,
     // imageURL: data.imageURL,
     // permissions: data.permissions,
@@ -163,6 +166,7 @@ returnUsers = (data) => {
       admin: data.admin,
       guest: data.guest,
       companyId: data.companyId,
+      sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
     })),
   };
 };
