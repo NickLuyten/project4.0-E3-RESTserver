@@ -828,7 +828,7 @@ exports.deleteLocal = (req, res, id) => {
 // Creates an admin
 exports.createAdmin = (req, res) => {
   console.log("create function");
-  let validationMessages = validateUserFields(req, true);
+  let validationMessages = validateUserFields(req, false);
 
   // If request not valid, return messages
   if (validationMessages.length != 0) {
