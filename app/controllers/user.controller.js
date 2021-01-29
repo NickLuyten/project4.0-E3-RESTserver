@@ -270,7 +270,7 @@ exports.create = (req, res) => {
                 admin: req.body.admin,
                 guest: req.body.guest,
                 companyId: req.body.companyId,
-                sanitizerLimitPerMonth: 0,
+                sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
                 permissions: JSON.stringify(permissionsRequest),
               });
 
