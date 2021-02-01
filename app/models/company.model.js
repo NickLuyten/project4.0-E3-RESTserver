@@ -14,6 +14,30 @@ module.exports = (Sequelize, sequelize) => {
     location: {
       type: Sequelize.STRING,
     },
+    welcomeMessage: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    handGelMessage: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    handGelOutOfStockMessage: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    authenticationFailedMessage: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    limitHandSanitizerReacedMessage: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    errorMessage: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
   });
 
   return Company;

@@ -6,12 +6,84 @@ const VendingMachineController = require("./vendingMachine.controller");
 const User = db.user;
 const UserController = require("./user.controller");
 
+validateCompanyFields = (req, isRequired) => {
+  // Validate request
+  validationMessages = [];
+
+  //First Name
+  if (!req.body.name && isRequired) {
+    validationMessages.push("name is required.");
+  } else if (req.body.name) {
+    if (req.body.name.length < 2) {
+      validationMessages.push("name must be at least 2 characters");
+    } else if (req.body.name.length > 24) {
+      validationMessages.push("name can not be longer than 24 characters");
+    }
+  }
+
+  if (!req.body.welcomeMessage && isRequired) {
+    validationMessages.push("welcomeMessage is required.");
+  } else if (req.body.welcomeMessage) {
+    if (req.body.welcomeMessage.length < 2) {
+      validationMessages.push("welcomeMessage must be at least 2 characters");
+    }
+  }
+
+  if (!req.body.handGelMessage && isRequired) {
+    validationMessages.push("handGelMessage is required.");
+  } else if (req.body.handGelMessage) {
+    if (req.body.handGelMessage.length < 2) {
+      validationMessages.push("handGelMessage must be at least 2 characters");
+    }
+  }
+
+  if (!req.body.handGelOutOfStockMessage && isRequired) {
+    validationMessages.push("handGelOutOfStockMessage is required.");
+  } else if (req.body.handGelOutOfStockMessage) {
+    if (req.body.handGelOutOfStockMessage.length < 2) {
+      validationMessages.push(
+        "handGelOutOfStockMessage must be at least 2 characters"
+      );
+    }
+  }
+
+  if (!req.body.authenticationFailedMessage && isRequired) {
+    validationMessages.push("authenticationFailedMessage is required.");
+  } else if (req.body.authenticationFailedMessage) {
+    if (req.body.authenticationFailedMessage.length < 2) {
+      validationMessages.push(
+        "authenticationFailedMessage must be at least 2 characters"
+      );
+    }
+  }
+
+  if (!req.body.errorMessage && isRequired) {
+    validationMessages.push("errorMessage is required.");
+  } else if (req.body.errorMessage) {
+    if (req.body.errorMessage.length < 2) {
+      validationMessages.push("errorMessage must be at least 2 characters");
+    }
+  }
+
+  if (!req.body.limitHandSanitizerReacedMessage && isRequired) {
+    validationMessages.push("limitHandSanitizerReacedMessage is required.");
+  }
+
+  return validationMessages;
+};
+
 returnCompany = (data) => {
   return {
     result: {
       id: data.id,
       name: data.name,
       location: data.location,
+      welcomeMessage: data.welcomeMessage,
+      handGelMessage: data.handGelMessage,
+      handGelOutOfStockMessage: data.handGelOutOfStockMessage,
+      authenticationFailedMessage: data.authenticationFailedMessage,
+      errorMessage: data.errorMessage,
+      limitHandSanitizerReacedMessage: data.limitHandSanitizerReacedMessage,
     },
   };
 };
@@ -22,6 +94,12 @@ returnCompanys = (data) => {
       id: data.id,
       name: data.name,
       location: data.location,
+      welcomeMessage: data.welcomeMessage,
+      handGelMessage: data.handGelMessage,
+      handGelOutOfStockMessage: data.handGelOutOfStockMessage,
+      authenticationFailedMessage: data.authenticationFailedMessage,
+      errorMessage: data.errorMessage,
+      limitHandSanitizerReacedMessage: data.limitHandSanitizerReacedMessage,
     })),
   };
 };
@@ -31,22 +109,36 @@ exports.create = (req, res) => {
   console.log("create function company");
 
   console.log(req.body.name + "  /  " + req.body.location);
-  let company = new Company({
-    name: req.body.name,
-    location: req.body.location,
-  });
-  console.log(company);
-  company
-    .save()
-    .then((data) => {
-      console.log("data");
-      return res.send(returnCompany(data));
-    })
-    .catch((err) => {
-      return res.status(500).send({
-        message: err || "Error creating company",
-      });
+
+  let validationMessages = validateCompanyFields(req, true);
+
+  // If request not valid, return messages
+  if (validationMessages.length != 0) {
+    return res.status(400).send({ messages: validationMessages });
+  } else {
+    let company = new Company({
+      name: req.body.name,
+      location: req.body.location,
+      welcomeMessage: req.body.welcomeMessage,
+      handGelMessage: req.body.handGelMessage,
+      handGelOutOfStockMessage: req.body.handGelOutOfStockMessage,
+      authenticationFailedMessage: req.body.authenticationFailedMessage,
+      errorMessage: req.body.errorMessage,
+      limitHandSanitizerReacedMessage: req.body.limitHandSanitizerReacedMessage,
     });
+    console.log(company);
+    company
+      .save()
+      .then((data) => {
+        console.log("data");
+        return res.send(returnCompany(data));
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err || "Error creating company",
+        });
+      });
+  }
 };
 
 // Find a single user with an id
