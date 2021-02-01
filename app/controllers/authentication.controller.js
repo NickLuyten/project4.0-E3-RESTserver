@@ -78,7 +78,12 @@ exports.create = (req, res) => {
 
 exports.createQrCodeForUser = (req, res) => {
   console.log("create function");
-
+  console.log(req.body.userId);
+  if (!req.body.userId || isNaN(req.body.userId)) {
+    return res.status(400).send({
+      message: "userId can't be null",
+    });
+  }
   User.findByPk(req.body.userId).then((user) => {
     if (
       authJwt.cehckIfPermission(req, permission.AUTHENTICATION_CREATE_COMPANY)
