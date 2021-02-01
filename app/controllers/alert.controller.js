@@ -43,18 +43,18 @@ exports.machineMishandeld = (req, res) => {
           " was not found for creating alert",
       });
     } else {
-      console.log("authuser");
-      if (authJwt.cehckIfPermission(req, permission.ALERT_CREATE_COMPANY)) {
-        console.log("cehckIfPermission true");
-        if (vendingmachine.companyId != req.authUser.companyId) {
-          return res.status(400).send({
-            message:
-              "vending machine with id: " +
-              id +
-              " can't be updated because the user can not update the vending machines of another company",
-          });
-        }
-      }
+      // console.log("authuser");
+      // if (authJwt.cehckIfPermission(req, permission.ALERT_CREATE_COMPANY)) {
+      //   console.log("cehckIfPermission true");
+      //   if (vendingmachine.companyId != req.authUser.companyId) {
+      //     return res.status(400).send({
+      //       message:
+      //         "vending machine with id: " +
+      //         id +
+      //         " can't be updated because the user can not update the vending machines of another company",
+      //     });
+      //   }
+      // }
       console.log("create alert");
       let alert = new Alert({
         type: alertTypes.machineAbuse,
