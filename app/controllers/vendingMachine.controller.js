@@ -281,7 +281,7 @@ exports.create = (req, res) => {
 };
 exports.testApiKey = (req, res) => {
   if (req.authVendingMachine != null) {
-    return { result: true };
+    return res.send({ result: true });
   } else {
     return res.status(400).send({
       message: "test api key failed authVendingMachine doens't exist",
