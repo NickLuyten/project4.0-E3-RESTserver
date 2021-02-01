@@ -32,7 +32,7 @@ returnAlerts = (data) => {
 // Create and Save a new user
 exports.machineMishandeld = (req, res) => {
   console.log("create function alert");
-  const id = req.params.id;
+  const id = req.authVendingMachine.id;
 
   VendingMachine.findByPk(id).then((vendingmachine) => {
     if (!vendingmachine) {

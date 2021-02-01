@@ -62,5 +62,16 @@ module.exports = (app) => {
     autherizedUserPerMachine.delete
   );
 
+  router.delete(
+    "/user/:userId/vendingmachine/:vendingMachineId",
+    [
+      authJwt.verifyToken,
+      authJwt.hasPermission(
+        permission.AUTHERIZED_USER_PER_MACHINE_DELETE_COMPANY
+      ),
+    ],
+    autherizedUserPerMachine.deleteWithVendingMachineAndUser
+  );
+
   app.use("/api/autherizedUserPerMachine", router);
 };

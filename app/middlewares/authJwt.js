@@ -1,16 +1,25 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/auth.config.js");
 const permissions = require("../const/permissions.js");
+const { vendingMachine } = require("../models");
 const db = require("../models");
 const User = db.user;
+const VendingMachine = db.vendingMachine;
 // const Match = db.match;
 
 isTokenPresent = (req) => {
   return req.headers["authorization"] !== undefined;
 };
 
+isVendingMachineTokenPresent = (req) => {
+  return req.headers["api-key"] !== undefined;
+};
+
 extractToken = (req) => {
   return req.headers["authorization"].split("Bearer ")[1];
+};
+extractVendingMachineToken = (req) => {
+  return req.headers["api-key"];
 };
 
 verifyToken = (req, res, next) => {
@@ -96,37 +105,6 @@ hasUserPriviliges = (req, res, next) => {
     });
   });
 };
-
-//basically if admin than continue
-// hasPermission = (permission) => {
-//   console.log("hasPermission");
-//   return (req, res, next) => {
-//     if (!isTokenPresent(req)) {
-//       return res.status(401).send({ message: "No token provided!" });
-//     }
-//     let token = extractToken(req);
-//     jwt.verify(token, config.secret, (err, decoded) => {
-//       if (err) {
-//         return res.status(403).send({ message: "Access denied." });
-//       }
-//       User.findByPk(decoded.id).then((user) => {
-//         req.authUser = user;
-//         if (user.permissions.includes(permission)) {
-//           next();
-//         } else {
-//           let alternatif = permission.replace("_COMPANY", "");
-//           if (user.permissions.includes(alternatif)) {
-//             next();
-//           } else {
-//             return res
-//               .status(403)
-//               .send({ message: "Route requires privileges" });
-//           }
-//         }
-//       });
-//     });
-//   };
-// };
 
 hasPermission = (permission, checkIfUser = 0, checkifUserInCompany = 0) => {
   return (req, res, next) => {
@@ -239,6 +217,27 @@ cehckIfPermission = (req, permission) => {
   }
 };
 
+isVendingMachine = (req) => {
+  if (isVendingMachineTokenPresent(req)) {
+    VendingMachine.findOne({
+      where: {
+        apiKey: extractVendingMachineToken(),
+      },
+    }).then((vendingMachine) => {
+      if (!vendingMachine) {
+        return res
+          .status(401)
+          .send({ message: "vendingmachine not found with api-key!" });
+      } else {
+        req.authVendingMachine = vendingMachine;
+        next();
+      }
+    });
+  } else {
+    return res.status(401).send({ message: "no api-key provided!" });
+  }
+};
+
 const authJwt = {
   verifyToken,
   verifyTokenIfPresent,
@@ -247,6 +246,7 @@ const authJwt = {
   isUserOrAdmin,
   hasPermission,
   cehckIfPermission,
+  isVendingMachine
   // hasPermissioncreateAuthentication,
   // hasPermissionOrIsUserItself,
   // hasPermissionMatchScore,
