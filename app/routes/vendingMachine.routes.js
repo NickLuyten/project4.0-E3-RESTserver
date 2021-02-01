@@ -51,7 +51,7 @@ module.exports = (app) => {
 
   // Update a single user with id
   router.put(
-    "/:id",
+    "/update/:id",
     [
       authJwt.verifyToken,
       authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY),
@@ -68,12 +68,19 @@ module.exports = (app) => {
   );
   //handgel afnemen
   router.put(
-    "/handgelAfnemen/",
+    "/handgelAfnemen",
     authJwt.isVendingMachine,
     vendingMachine.handgelAfhalen
   );
-  router.put("/handgelBijVullen/:id",[ authJwt.verifyToken,
-    (authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY)||authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY_REFILL))], vendingMachine.handgelbijvullen);
+  router.put(
+    "/handgelBijVullen/:id",
+    [
+      authJwt.verifyToken,
+      authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY) ||
+        authJwt.hasPermission(permission.VENDING_MACHINE_UPDATE_COMPANY_REFILL),
+    ],
+    vendingMachine.handgelbijvullen
+  );
 
   // Delete a user with id
   router.delete(
