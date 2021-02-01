@@ -217,11 +217,11 @@ cehckIfPermission = (req, permission) => {
   }
 };
 
-isVendingMachine = (req) => {
+isVendingMachine = (req, res, next) => {
   if (isVendingMachineTokenPresent(req)) {
     VendingMachine.findOne({
       where: {
-        apiKey: extractVendingMachineToken(),
+        apiKey: extractVendingMachineToken(req),
       },
     }).then((vendingMachine) => {
       if (!vendingMachine) {
@@ -246,7 +246,7 @@ const authJwt = {
   isUserOrAdmin,
   hasPermission,
   cehckIfPermission,
-  isVendingMachine
+  isVendingMachine,
   // hasPermissioncreateAuthentication,
   // hasPermissionOrIsUserItself,
   // hasPermissionMatchScore,
