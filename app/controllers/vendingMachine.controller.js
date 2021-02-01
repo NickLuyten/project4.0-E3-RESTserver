@@ -117,7 +117,7 @@ storeVendingMachineInDatabase = (vendingMachine, res) => {
   vendingMachine
     .save(vendingMachine)
     .then((data) => {
-      return res.send(returnVendingMachine(data));
+      return res.send(returnVendingMachineWithApiKey(data));
     })
     .catch((err) => {
       return res.status(500).send({
