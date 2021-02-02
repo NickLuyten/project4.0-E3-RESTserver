@@ -14,6 +14,7 @@ returnAlert = (data) => {
       type: data.type,
       melding: data.melding,
       vendingMachineId: data.vendingMachineId,
+      createdAt: data.createdAt,
     },
   };
 };
@@ -25,6 +26,7 @@ returnAlerts = (data) => {
       type: data.type,
       melding: data.melding,
       vendingMachineId: data.vendingMachineId,
+      createdAt: data.createdAt,
     })),
   };
 };
