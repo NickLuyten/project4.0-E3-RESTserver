@@ -182,12 +182,7 @@ exports.create = (req, res) => {
   if (validationMessages.length != 0) {
     return res.status(400).send({ messages: validationMessages });
   } else {
-    if (!req.body.admin) {
-      req.body.admin = false;
-    } else {
-      req.body.guest = false;
-    }
-    if (!req.body.guest) {
+    if (req.body.admin == true) {
       req.body.guest = false;
     }
     if (!req.body.permissions) {
