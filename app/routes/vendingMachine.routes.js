@@ -4,7 +4,7 @@ module.exports = (app) => {
   var router = require("express").Router();
   const permission = require("../const/permissions");
 
-  // Create a new user
+  // Create a new vendingmachine
   router.post(
     "/",
     [
@@ -14,7 +14,7 @@ module.exports = (app) => {
     vendingMachine.create
   );
 
-  // Retrieve all users
+  // Retrieve all vendingmachine
   router.get(
     "/all",
     [
@@ -24,13 +24,14 @@ module.exports = (app) => {
     vendingMachine.findAll
   );
 
+  // test api key for vendingmachine
   router.get(
     "/testApiKey",
     authJwt.isVendingMachine,
     vendingMachine.testApiKey
   );
 
-  // Retrieve a single user with id
+  // Retrieve a single vendingmachine with id
   router.get(
     "/:id",
     [
@@ -40,6 +41,7 @@ module.exports = (app) => {
     vendingMachine.findOne
   );
 
+  //Retrieve all vendingmachines for company with id
   router.get(
     "/company/:id",
     [
@@ -49,7 +51,7 @@ module.exports = (app) => {
     vendingMachine.findVendingMachinesFromCompany
   );
 
-  // Update a single user with id
+  // Update a single vendingmachines with id
   router.put(
     "/update/:id",
     [
@@ -58,6 +60,8 @@ module.exports = (app) => {
     ],
     vendingMachine.update
   );
+
+  // Update the apikey for vendingmachines with id
   router.put(
     "/apiKey/:id",
     [
@@ -66,12 +70,15 @@ module.exports = (app) => {
     ],
     vendingMachine.updateApiKey
   );
-  //handgel afnemen
+
+  //get hand gel
   router.put(
     "/handgelAfnemen",
     authJwt.isVendingMachine,
     vendingMachine.handgelAfhalen
   );
+
+  //refill vending machine with id
   router.put(
     "/handgelBijVullen/:id",
     [
@@ -82,7 +89,7 @@ module.exports = (app) => {
     vendingMachine.handgelbijvullen
   );
 
-  // Delete a user with id
+  // Delete a vending machine with id
   router.delete(
     "/:id",
     [

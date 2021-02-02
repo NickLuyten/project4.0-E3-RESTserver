@@ -4,28 +4,28 @@ module.exports = (app) => {
   var router = require("express").Router();
   const permission = require("../const/permissions");
 
-  // Create a new user
+  // Create a new company
   router.post(
     "/",
     [authJwt.verifyToken, authJwt.hasPermission(permission.COMPANY_CREATE)],
     company.create
   );
 
-  // Retrieve all users
+  // Retrieve all companies
   router.get(
     "/all",
     [authJwt.verifyToken, authJwt.hasPermission(permission.COMPANY_READ)],
     company.findAll
   );
 
-  // Retrieve a single user with id
+  // Retrieve a single company with id
   router.get(
     "/:id",
     [authJwt.verifyToken, authJwt.hasPermission(permission.COMPANY_READ, 0, 1)],
     company.findOne
   );
 
-  // Update a single user with id
+  // Update a single company with id
   router.put(
     "/:id",
     [
@@ -35,7 +35,7 @@ module.exports = (app) => {
     company.update
   );
 
-  // Delete a user with id
+  // Delete a company with id
   router.delete(
     "/:id",
     [authJwt.verifyToken, authJwt.hasPermission(permission.COMPANY_DELETE)],

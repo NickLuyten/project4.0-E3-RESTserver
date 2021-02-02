@@ -4,7 +4,7 @@ module.exports = (app) => {
   var router = require("express").Router();
   const permission = require("../const/permissions");
 
-  // Create a new user
+  // Create a new autherizedUserPerMachine
   router.post(
     "/",
     [
@@ -16,7 +16,7 @@ module.exports = (app) => {
     autherizedUserPerMachine.create
   );
 
-  // Retrieve all users
+  // Retrieve all autherizedUserPerMachine
   router.get(
     "/all",
     [
@@ -27,7 +27,7 @@ module.exports = (app) => {
     ],
     autherizedUserPerMachine.findAll
   );
-  // Retrieve all users for a vending machine
+  // Retrieve all autherizedUserPerMachine for a vending machine
   router.get(
     "/vendingmachine/:id",
     [
@@ -38,7 +38,7 @@ module.exports = (app) => {
     ],
     autherizedUserPerMachine.findAllAuthenticatedUsersForVendingMachine
   );
-  // Retrieve a single user with id
+  // Retrieve a single autherizedUserPerMachine with id
   router.get(
     "/:id",
     [
@@ -50,7 +50,7 @@ module.exports = (app) => {
     autherizedUserPerMachine.findOne
   );
 
-  // Delete a user with id
+  // Delete a autherizedUserPerMachine with id
   router.delete(
     "/:id",
     [
@@ -61,7 +61,7 @@ module.exports = (app) => {
     ],
     autherizedUserPerMachine.delete
   );
-
+  // Delete a autherizedUserPerMachine with userId en vendingmachineId
   router.delete(
     "/user/:userId/vendingmachine/:vendingMachineId",
     [

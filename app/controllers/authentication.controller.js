@@ -7,7 +7,7 @@ const User = db.user;
 const VendingMachine = db.vendingMachine;
 const { Op } = require("sequelize");
 
-//helper function to store user in db
+//helper function to store Authentication in db
 storeAuthenticationDatabase = (authentication, res) => {
   authentication
     .save(authentication)
@@ -44,7 +44,7 @@ returnAuthentications = (data) => {
   };
 };
 
-// Create and Save a new user
+// Create and Save a new Authentication
 exports.create = (req, res) => {
   console.log("create function");
   Authentication.findOne({
@@ -127,7 +127,7 @@ exports.createQrCodeForUser = (req, res) => {
     });
   });
 };
-// Find a single user with an id
+// Find a single user with user id
 exports.findByUserID = async (req, res) => {
   const id = req.params.id;
 
@@ -172,7 +172,7 @@ exports.findByUserID = async (req, res) => {
       });
     });
 };
-// Find a single user with an id
+// Find a single Authentication with an id
 exports.findOne = async (req, res) => {
   console.log("findone");
   const id = req.params.id;
@@ -236,7 +236,7 @@ exports.findOne = async (req, res) => {
       });
     });
 };
-// Find a single user with an authentication string (uuid)
+// Find a single Authentication with an authentication string (uuid)
 exports.findByAuthenticationString = (req, res) => {
   const uuid = req.params.uuid;
 
@@ -309,7 +309,7 @@ exports.findByAuthenticationString = (req, res) => {
     });
 };
 
-// Update a user
+// Update a Authentication
 exports.update = async (req, res) => {
   if (!req.body) {
     return res.status(400).send({ message: "geen data?" });
@@ -369,7 +369,7 @@ exports.update = async (req, res) => {
   });
 };
 
-// Find all users
+// Find all Authentications
 exports.findAll = async (req, res) => {
   if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
     let vendingmachines;
@@ -434,7 +434,7 @@ exports.findAll = async (req, res) => {
   }
 };
 
-// Delete a user with the specified id in the request
+// Delete a Authentication with the specified id in the request
 exports.delete = (req, res) => {
   const id = req.params.id;
 

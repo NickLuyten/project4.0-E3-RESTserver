@@ -7,7 +7,7 @@ const { authJwt } = require("../middlewares/index");
 const permission = require("../const/permissions");
 const { Op } = require("sequelize");
 
-//helper function to store user in db
+//helper function to store UserThatReceiveAlertsFromVendingMachine in db
 storeUserThatReceiveAlertsFromVendingMachineDatabase = (
   userThatReceiveAlertsFromVendingMachine,
   res
@@ -45,7 +45,6 @@ returnUserThatReceiveAlertsFromVendingMachines = (data) => {
   };
 };
 
-// Create and Save a new user
 exports.create = async (req, res) => {
   console.log("create function");
   let user;
@@ -125,7 +124,6 @@ exports.create = async (req, res) => {
   });
 };
 
-// Find a single user with an id
 exports.findOne = async (req, res) => {
   const id = req.params.id;
 
@@ -183,7 +181,6 @@ exports.findOne = async (req, res) => {
     });
 };
 
-// Update a user
 exports.update = async (req, res) => {
   if (!req.body) {
     return res.status(400).send({ message: "geen data?" });
@@ -219,7 +216,6 @@ exports.update = async (req, res) => {
   );
 };
 
-// Find all users
 exports.findAll = async (req, res) => {
   if (
     authJwt.cehckIfPermission(
@@ -303,7 +299,6 @@ exports.findAll = async (req, res) => {
   }
 };
 
-// Delete a user with the specified id in the request
 exports.delete = async (req, res) => {
   const id = req.params.id;
 
