@@ -9,6 +9,8 @@ const UserThatReceiveAlertsFromVendingMachine =
 
 const { authJwt } = require("../middlewares/index");
 const permission = require("../const/permissions");
+const { Op } = require("sequelize");
+
 // const { test } = require("../const/permissions");
 // const { adminPermissions, userPermissions } = require("../const/permissions");
 
@@ -118,7 +120,7 @@ returnUserWithToken = (data) => {
       companyId: data.companyId,
       accessToken: createToken(data),
       permissions: JSON.parse(data.permissions),
-      sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
+      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     },
   };
 };
@@ -135,7 +137,7 @@ returnUserLimited = (data) => {
       guest: data.guest,
       companyId: data.companyId,
       permissions: JSON.parse(data.permissions),
-      sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
+      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     },
   };
 };
@@ -149,7 +151,7 @@ returnUserLimitedLocal = (data) => {
     admin: data.admin,
     guest: data.guest,
     companyId: data.companyId,
-    sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
+    sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     // dateOfBirth: data.dateOfBirth,
     // imageURL: data.imageURL,
     // permissions: data.permissions,
@@ -166,7 +168,7 @@ returnUsers = (data) => {
       admin: data.admin,
       guest: data.guest,
       companyId: data.companyId,
-      sanitizerLimitPerMonth:data.sanitizerLimitPerMonth
+      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     })),
   };
 };
@@ -880,4 +882,39 @@ exports.findOneLocal = async (id) => {
     return res.status(400).send({ message: "Not found user with id " + id });
 
   return returnUserLimitedLocal(response);
+};
+
+exports.handgelLimit = async (req, res) => {
+  const id = req.params.id;
+
+  User.findByPk(id).then((user) => {
+    if (!user) {
+      return res.status(400).send({
+        message: "user not found with id=" + authentication.userId,
+      });
+    } else {
+      let limit = user.sanitizerLimitPerMonth;
+      let greatherDate = new Date();
+      greatherDate.setDate(greatherDate.getDate() - 30);
+      console.log("greatherDate");
+      console.log(greatherDate);
+
+      Authentication.findAll({
+        where: {
+          userId: user.id,
+          updatedAt: {
+            [Op.gte]: greatherDate,
+          },
+          vendingMachineId: {
+            [Op.ne]: null,
+          },
+        },
+      }).then((authentications) => {
+        console.log(authentications.length + "  /  " + limit);
+        return res.send({
+          result: { handgels: authentications.length + "  /  " + limit },
+        });
+      });
+    }
+  });
 };

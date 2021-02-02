@@ -46,6 +46,14 @@ module.exports = (app) => {
     ],
     users.findOne
   );
+  router.get(
+    "/handgelLimit/:id",
+    [
+      authJwt.verifyToken,
+      authJwt.hasPermission(permission.USER_READ_COMPANY, 1),
+    ],
+    users.handgelLimit
+  );
 
   // Update a single user with id
   router.put(
