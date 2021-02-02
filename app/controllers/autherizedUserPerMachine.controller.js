@@ -6,7 +6,7 @@ const { authJwt } = require("../middlewares/index");
 const permission = require("../const/permissions");
 const { Op } = require("sequelize");
 
-//helper function to store user in db
+//helper function to store AutherizedUserPerMachine in db
 storeAutherizedUserPerMachine = (autherizedUserPerMachine, res) => {
   autherizedUserPerMachine
     .save(autherizedUserPerMachine)
@@ -41,7 +41,7 @@ returnAutherizedUserPerMachines = (data) => {
   };
 };
 
-// Create and Save a new user
+// Create and Save a new AutherizedUserPerMachine
 exports.create = (req, res) => {
   User.findByPk(req.body.userId)
     .then((user) => {
@@ -110,7 +110,7 @@ exports.create = (req, res) => {
     });
 };
 
-// Find a single user with an id
+// Find a single AutherizedUserPerMachine with an id
 exports.findOne = (req, res) => {
   const id = req.params.id;
 
@@ -161,7 +161,7 @@ exports.findOne = (req, res) => {
       });
     });
 };
-// Find all users
+// Find all AutherizedUserPerMachine
 exports.findAll = async (req, res) => {
   if (authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)) {
     let vendingmachines;
@@ -234,7 +234,7 @@ exports.findAll = async (req, res) => {
   }
 };
 
-// Find all users
+// Find all AutherizedUserPerMachine for a specific vendingmachine
 exports.findAllAuthenticatedUsersForVendingMachine = (req, res) => {
   const id = req.params.id;
   VendingMachine.findByPk(id).then((vendingMachine) => {
@@ -276,7 +276,7 @@ exports.findAllAuthenticatedUsersForVendingMachine = (req, res) => {
   });
 };
 
-// Delete a user with the specified id in the request
+// Delete a AutherizedUserPerMachine with the vendingmachineId and the userId in the request
 exports.deleteWithVendingMachineAndUser = (req, res) => {
   const vendingmachineId = req.params.vendingMachineId;
   const userId = req.params.userId;
@@ -359,6 +359,7 @@ exports.deleteWithVendingMachineAndUser = (req, res) => {
     });
 };
 
+// Delete a AutherizedUserPerMachine with id in the request
 exports.delete = (req, res) => {
   const id = req.params.id;
 

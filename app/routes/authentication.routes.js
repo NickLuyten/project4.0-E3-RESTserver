@@ -4,7 +4,7 @@ module.exports = (app) => {
   var router = require("express").Router();
   const permission = require("../const/permissions");
 
-  // Create a new user
+  // Create a new authentication
   router.post(
     "/",
     [
@@ -13,6 +13,7 @@ module.exports = (app) => {
     ],
     authentication.create
   );
+  // Create a new authentication for a user
   router.post(
     "/user/",
     [
@@ -22,7 +23,7 @@ module.exports = (app) => {
     authentication.createQrCodeForUser
   );
 
-  // Retrieve all users
+  // Retrieve all authentications
   router.get(
     "/all",
     [
@@ -32,7 +33,7 @@ module.exports = (app) => {
     authentication.findAll
   );
 
-  // Retrieve a single user with id
+  // Retrieve a authentication with id
   router.get(
     "/:id",
     [
@@ -42,7 +43,7 @@ module.exports = (app) => {
     authentication.findOne
   );
 
-  // Retrieve a single user with id
+  // Retrieve a authentication with uuid
   router.get(
     "/authenticationString/:uuid",
     [
@@ -51,7 +52,7 @@ module.exports = (app) => {
     ],
     authentication.findByAuthenticationString
   );
-  // Retrieve a single user with id
+  // Retrieve a authentication for a specific user with id
   router.get(
     "/user/:id",
     [
@@ -61,7 +62,7 @@ module.exports = (app) => {
     authentication.findByUserID
   );
 
-  // Update a single user with id
+  // Update a authentication with id
   router.put(
     "/:id",
     [
@@ -71,7 +72,7 @@ module.exports = (app) => {
     authentication.update
   );
 
-  // Delete a user with id
+  // Delete a authentication with id
   router.delete(
     "/:id",
     [

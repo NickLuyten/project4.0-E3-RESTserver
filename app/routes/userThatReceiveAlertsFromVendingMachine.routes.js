@@ -3,7 +3,7 @@ module.exports = (app) => {
   const { authJwt } = require("../middlewares");
   var router = require("express").Router();
   const permission = require("../const/permissions");
-  // Create a new user
+  // Create a new userThatReceiveAlertsFromVendingMachine
   router.post(
     "/",
     [
@@ -15,7 +15,7 @@ module.exports = (app) => {
     userThatReceiveAlertsFromVendingMachine.create
   );
 
-  // Retrieve all users
+  // Retrieve all userThatReceiveAlertsFromVendingMachine
   router.get(
     "/all",
     [
@@ -27,7 +27,7 @@ module.exports = (app) => {
     userThatReceiveAlertsFromVendingMachine.findAll
   );
 
-  // Retrieve a single user with id
+  // Retrieve a single userThatReceiveAlertsFromVendingMachine with id
   router.get(
     "/:id",
     [
@@ -39,7 +39,7 @@ module.exports = (app) => {
     userThatReceiveAlertsFromVendingMachine.findOne
   );
 
-  // Delete a user with id
+  // Delete a userThatReceiveAlertsFromVendingMachine with id
   router.delete(
     "/:id",
     [

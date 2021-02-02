@@ -2,13 +2,9 @@ module.exports = (app) => {
   const users = require("../controllers/user.controller.js");
   const { authJwt } = require("../middlewares");
   const permission = require("../const/permissions");
-  // const multer = require("multer");
-  // const multerConfig = require("../config/multer.config");
-
   var router = require("express").Router();
 
   // Create a new user
-  // router.post('/register', multer({ storage: multerConfig.storage }).array('image'), users.create);
   router.post(
     "/register",
     [
@@ -17,18 +13,11 @@ module.exports = (app) => {
     ],
     users.create
   );
+  // Create a new admin
   router.post("/admin", users.createAdmin);
 
   // Authenticate user
   router.post("/authenticate", users.authenticate);
-
-  // Create a new admin
-  // router.post(
-  //   '/admin',
-  //   [authJwt.verifyToken, authJwt.hasPermission('ADMIN_CREATE')],
-  //   multer({ storage: multerConfig.storage }).array('image'),
-  //   users.createAdmin
-  // );
 
   // Retrieve all users
   router.get(
@@ -46,6 +35,8 @@ module.exports = (app) => {
     ],
     users.findOne
   );
+
+  //Retrieve handgelLimit for user with id
   router.get(
     "/handgelLimit/:id",
     [
@@ -65,7 +56,7 @@ module.exports = (app) => {
     users.update
   );
 
-  // Update a single user with id
+  // Update  password for user with id
   router.put(
     "/updatePassword/:id",
     [

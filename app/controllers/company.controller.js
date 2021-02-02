@@ -10,7 +10,6 @@ validateCompanyFields = (req, isRequired) => {
   // Validate request
   validationMessages = [];
 
-  //First Name
   if (!req.body.name && isRequired) {
     validationMessages.push("name is required.");
   } else if (req.body.name) {
@@ -104,7 +103,7 @@ returnCompanys = (data) => {
   };
 };
 
-// Create and Save a new user
+// Create and Save a new company
 exports.create = (req, res) => {
   console.log("create function company");
 
@@ -141,7 +140,7 @@ exports.create = (req, res) => {
   }
 };
 
-// Find a single user with an id
+// Find a single company with an id
 exports.findOne = (req, res) => {
   const id = req.params.id;
 
@@ -163,7 +162,7 @@ exports.findOne = (req, res) => {
     });
 };
 
-// Find all users
+// Find all companies
 exports.findAll = (req, res) => {
   Company.findAll()
     .then((company) => {
@@ -177,7 +176,7 @@ exports.findAll = (req, res) => {
         .send({ message: err.message || "Error retrieving company" });
     });
 };
-//Update a user
+//Update a company
 exports.update = async (req, res) => {
   if (!req.body) {
     return res.status(400).send({ message: "geen data?" });
@@ -201,7 +200,7 @@ exports.update = async (req, res) => {
     }
   });
 };
-// Delete a user with the specified id in the request
+// Delete a company with the specified id in the request
 exports.delete = (req, res) => {
   const id = req.params.id;
 

@@ -11,9 +11,6 @@ const { authJwt } = require("../middlewares/index");
 const permission = require("../const/permissions");
 const { Op } = require("sequelize");
 
-// const { test } = require("../const/permissions");
-// const { adminPermissions, userPermissions } = require("../const/permissions");
-
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
 const permissions = require("../const/permissions");
@@ -55,7 +52,7 @@ validateUserFields = (req, isRequired) => {
     }
   }
 
-  //Last Name
+  //password validation
   if (!req.body.password && isRequired) {
     validationMessages.push("Password is required.");
   } else if (req.body.password) {
@@ -66,7 +63,7 @@ validateUserFields = (req, isRequired) => {
     }
   }
 
-  //Last Name
+  //company vallidation
   if (!req.body.companyId && isRequired) {
     validationMessages.push("CompanyId is required.");
   }
@@ -152,9 +149,7 @@ returnUserLimitedLocal = (data) => {
     guest: data.guest,
     companyId: data.companyId,
     sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
-    // dateOfBirth: data.dateOfBirth,
-    // imageURL: data.imageURL,
-    // permissions: data.permissions,
+    permissions: JSON.parse(data.permissions),
   };
 };
 
@@ -169,16 +164,15 @@ returnUsers = (data) => {
       guest: data.guest,
       companyId: data.companyId,
       sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
+      permissions: JSON.parse(data.permissions),
     })),
   };
 };
 
-// Create and Save a new user
 exports.create = (req, res) => {
   console.log("create function");
   let validationMessages = validateUserFields(req, true);
 
-  // If request not valid, return messages
   if (validationMessages.length != 0) {
     return res.status(400).send({ messages: validationMessages });
   } else {
@@ -294,17 +288,6 @@ exports.create = (req, res) => {
           message: "error creating user  error : " + err,
         });
       });
-    // Create a user
-
-    // const imageFilePaths = req.files.map((file) => req.protocol + '://' + req.get('host') + '/images/' + file.filename);
-
-    // if (imageFilePaths[0]) {
-    //   user.imageURL = imageFilePaths[0];
-    // } else {
-    //   user.imageURL = 'https://rainbow-flick-backend-app.herokuapp.com/images/placeholder.png';
-    // }
-
-    // user.permissions = [...userPermissions];
   }
 };
 
@@ -316,7 +299,7 @@ exports.authenticate = (req, res) => {
     validationMessages.push("Email moet ingevuld zijn.");
   }
 
-  //Last Name
+  //password validation
   if (!req.body.password) {
     validationMessages.push("Password moet ingevuld zijn.");
   }
@@ -472,14 +455,8 @@ exports.update = async (req, res) => {
       }
     }
   }
-  // let user = req.body;
 
-  // if (req.files) {
-  //   const imageFilePaths = req.files.map((file) => req.protocol + '://' + req.get('host') + '/images/' + file.filename);
-  //   if (imageFilePaths[0]) {
-  //     user.imageURL = imageFilePaths[0];
-  //   }
-  // }
+  
   console.log("update4");
 
   const id = req.params.id;
@@ -507,19 +484,7 @@ exports.update = async (req, res) => {
       });
     }
   });
-  // User.findByIdAndUpdate(id, req.body, { new: true, useFindAndModify: false })
-  //   .then((data) => {
-  //     if (!data) {
-  //       return res.status(400).send({
-  //         message: `Cannot update user with id=${id}. Maybe user was not found!`,
-  //       });
-  //     } else return res.send(returnUserWithToken(data));
-  //   })
-  //   .catch((err) => {
-  //     return res.status(500).send({
-  //       message: "Error updating with id=" + id,
-  //     });
-  //   });
+
 };
 
 // Update a user
@@ -596,36 +561,6 @@ exports.findAll = (req, res) => {
   }
 };
 
-// Delete a user with the specified id in the request
-// exports.delete = (req, res) => {
-//   const id = req.params.id;
-//   User.findByPk(id)
-//     .then((user) => {
-//       if (!user) {
-//         return res.status(400).send({
-//           message: `Cannot delete user with id=${id}. Maybe user was not found!`,
-//         });
-//       } else {
-//         user
-//           .destroy()
-//           .then(() => {
-//             return res.send({
-//               message: "User was deleted successfully!",
-//             });
-//           })
-//           .catch((err) => {
-//             return res.status(500).send({
-//               message: err.message || "Could not delete user with id=" + id,
-//             });
-//           });
-//       }
-//     })
-//     .catch((err) => {
-//       return res.status(500).send({
-//         message: err.message || "Could not delete user with id=" + id,
-//       });
-//     });
-// };
 exports.delete = async (req, res) => {
   const id = req.params.id;
   let checkifUserFromSameCompany;

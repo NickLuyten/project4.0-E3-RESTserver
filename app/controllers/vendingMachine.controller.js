@@ -15,7 +15,7 @@ const User = db.user;
 
 const { authJwt } = require("../middlewares/index");
 const permission = require("../const/permissions");
-//helper function to validate userfields
+//helper function to validate vendingmachineFields
 validateVendingMachineFields = (req, isRequired) => {
   // Validate request
   validationMessages = [];
@@ -112,7 +112,7 @@ validateVendingMachineFields = (req, isRequired) => {
   return validationMessages;
 };
 
-//helper function to store user in db
+//helper function to store vendingmachine in db
 storeVendingMachineInDatabase = (vendingMachine, res) => {
   vendingMachine
     .save(vendingMachine)
@@ -208,12 +208,10 @@ returnVendingMachines = (data) => {
   };
 };
 
-// Create and Save a new user
 exports.create = (req, res) => {
   console.log("create function : " + JSON.stringify(req.body));
   let validationMessages = validateVendingMachineFields(req, true);
 
-  // If request not valid, return messages
   if (validationMessages.length != 0) {
     return res.status(400).send({ messages: validationMessages });
   } else {
@@ -238,7 +236,7 @@ exports.create = (req, res) => {
               });
             }
           }
-          // Create a user
+
           let vendingMachine = new VendingMachine({
             name: req.body.name,
             maxNumberOfProducts: req.body.maxNumberOfProducts,
@@ -255,21 +253,7 @@ exports.create = (req, res) => {
             companyId: req.body.companyId,
             apiKey: uuidv4(),
           });
-
-          // VendingMachine.findOne({
-          //   where: {
-          //     name: req.body.name,
-          //   },
-          // }).then((response) => {
-          //   console.log("response : " + response);
-          //   if (response == null || response.length == 0) {
           storeVendingMachineInDatabase(vendingMachine, res);
-          // } else {
-          //   return res.status(400).send({
-          //     message: `Already exists an vending machine with this name: ${vendingMachine.name}`,
-          //   });
-          // }
-          // });
         }
       })
       .catch((err) => {
@@ -288,7 +272,7 @@ exports.testApiKey = (req, res) => {
     });
   }
 };
-// Find a single user with an id
+
 exports.findOne = (req, res) => {
   const id = req.params.id;
 
@@ -322,7 +306,7 @@ exports.findOne = (req, res) => {
         .send({ message: "Error retrieving vending machine with id=" + id });
     });
 };
-//find all vending machines of company
+
 exports.findVendingMachinesFromCompany = (req, res) => {
   const id = req.params.id;
   VendingMachine.findAll({
@@ -342,10 +326,9 @@ exports.findVendingMachinesFromCompany = (req, res) => {
     });
 };
 
-// Update a user
 exports.update = async (req, res) => {
   let validationMessages = validateVendingMachineFields(req, false);
-  // If request not valid, return messages
+
   if (validationMessages.length != 0) {
     return res.status(400).send({ messages: validationMessages });
   }
@@ -440,8 +423,8 @@ exports.update = async (req, res) => {
 };
 
 exports.updateApiKey = async (req, res) => {
-  // If request not valid, return messages
   const id = req.params.id;
+
   VendingMachine.findByPk(id).then((vendingMachine) => {
     if (!vendingMachine) {
       return res.status(400).send({
@@ -492,7 +475,7 @@ userAutherizedForVendingmachine = (userId, vendingMachineId) => {
     }
   });
 };
-//handgelafhalen
+
 exports.handgelAfhalen = async (req, res) => {
   const id = req.authVendingMachine.id;
   const uuid = req.body.authentication;
@@ -654,7 +637,6 @@ exports.handgelAfhalen = async (req, res) => {
     });
 };
 
-//handgelafhalen
 exports.handgelbijvullen = async (req, res) => {
   const id = req.params.id;
   VendingMachine.findByPk(id)
@@ -717,7 +699,6 @@ exports.handgelbijvullen = async (req, res) => {
     });
 };
 
-// Find all users
 exports.findAll = (req, res) => {
   if (authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ_COMPANY)) {
     VendingMachine.findAll({
@@ -749,37 +730,6 @@ exports.findAll = (req, res) => {
     });
 };
 
-// Delete a user with the specified id in the request
-// exports.delete = (req, res) => {
-//   const id = req.params.id;
-//   VendingMachine.findByPk(id)
-//     .then((vendingMachine) => {
-//       if (!vendingMachine) {
-//         return res.status(400).send({
-//           message: `Cannot delete vending machine with id=${id}. Maybe vending machine was not found!`,
-//         });
-//       } else {
-//         vendingMachine
-//           .destroy()
-//           .then(() => {
-//             return res.send({
-//               message: "vending machine was deleted successfully!",
-//             });
-//           })
-//           .catch((err) => {
-//             return res.status(500).send({
-//               message:
-//                 err.message || "Could not delete vending machine with id=" + id,
-//             });
-//           });
-//       }
-//     })
-//     .catch((err) => {
-//       return res.status(500).send({
-//         message: err.message || "Could not vending machine user with id=" + id,
-//       });
-//     });
-// };
 exports.delete = async (req, res) => {
   const id = req.params.id;
   if (authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ_COMPANY)) {
