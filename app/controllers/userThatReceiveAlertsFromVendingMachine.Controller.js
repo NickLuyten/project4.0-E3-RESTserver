@@ -39,9 +39,26 @@ returnUserThatReceiveAlertsFromVendingMachines = (data) => {
   return {
     results: data.map((data) => ({
       id: data.id,
-      userId: data.userId,
-      vendingMachineId: data.vendingMachineId,
+      user: returnUser(data.user),
+      vendingMachine: returnVendingMachine(data.vendingMachine),
     })),
+  };
+};
+
+returnUser = (data) => {
+  return {
+    id: data.id,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    email: data.email,
+  };
+};
+
+returnVendingMachine = (data) => {
+  return {
+    id: data.id,
+    name: data.name,
+    location: data.location,
   };
 };
 
@@ -259,6 +276,14 @@ exports.findAll = async (req, res) => {
           { userId: usersIds },
         ],
       },
+      include: [
+        {
+          model: User,
+        },
+        {
+          model: VendingMachine,
+        },
+      ],
     })
       .then((userThatReceiveAlertsFromVendingMachine) => {
         if (!userThatReceiveAlertsFromVendingMachine)
@@ -278,7 +303,16 @@ exports.findAll = async (req, res) => {
         });
       });
   } else {
-    UserThatReceiveAlertsFromVendingMachine.findAll()
+    UserThatReceiveAlertsFromVendingMachine.findAll({
+      include: [
+        {
+          model: User,
+        },
+        {
+          model: VendingMachine,
+        },
+      ],
+    })
       .then((userThatReceiveAlertsFromVendingMachine) => {
         if (!userThatReceiveAlertsFromVendingMachine)
           return res.status(400).send({

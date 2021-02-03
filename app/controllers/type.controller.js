@@ -42,6 +42,7 @@ returnType = (data) => {
       id: data.id,
       name: data.name,
       companyId: data.companyId,
+      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     },
   };
 };
@@ -52,6 +53,7 @@ returnTypes = (data) => {
       id: data.id,
       name: data.name,
       companyId: data.companyId,
+      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     })),
   };
 };
@@ -85,6 +87,7 @@ exports.create = (req, res) => {
         let type = new Type({
           companyId: req.body.companyId,
           name: req.body.name,
+          sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
         });
         console.log(type);
         storeTypeDatabase(type, res);
@@ -212,9 +215,7 @@ exports.delete = (req, res) => {
               message: `Cannot delete type with id=${id}. Maybe type was not found!`,
             });
           } else {
-            if (
-              !authJwt.cehckIfPermission(req, permission.TYPE_DELETE)
-            ) {
+            if (!authJwt.cehckIfPermission(req, permission.TYPE_DELETE)) {
               if (req.authUser.companyId == type.companyId) {
                 type
                   .destroy()
@@ -279,9 +280,7 @@ exports.deleteLocal = (req, res, id) => {
               message: `Cannot delete type with id=${id}. Maybe type was not found!`,
             });
           } else {
-            if (
-              !authJwt.cehckIfPermission(req, permission.TYPE_DELETE)
-            ) {
+            if (!authJwt.cehckIfPermission(req, permission.TYPE_DELETE)) {
               if (req.authUser.companyId == type.companyId) {
                 type
                   .destroy()
