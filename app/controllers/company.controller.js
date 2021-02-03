@@ -6,6 +6,8 @@ const VendingMachineController = require("./vendingMachine.controller");
 const User = db.user;
 const UserController = require("./user.controller");
 
+const Type = db.type;
+const TypeController = require("./type.controller");
 validateCompanyFields = (req, isRequired) => {
   // Validate request
   validationMessages = [];
@@ -231,28 +233,50 @@ exports.delete = (req, res) => {
             UserController.deleteLocal(req, res, users[i].id);
           }
 
-          Company.findByPk(id)
-            .then((company) => {
-              if (!company) {
-                return res.status(400).send({
-                  message: `Cannot delete company with id=${id}. Maybe company was not found!`,
-                });
-              } else {
-                company
-                  .destroy()
-                  .then(() => {
-                    console.log("deleted company");
-                    return res.send({
-                      message: "company was deleted successfully!",
-                    });
-                  })
-                  .catch((err) => {
-                    return res.status(500).send({
-                      message:
-                        err.message || "Could not delete company with id=" + id,
-                    });
-                  });
+          Type.findAll({
+            where: {
+              companyId: id,
+            },
+          })
+            .then((types) => {
+              console.log("types");
+              console.log(types);
+              for (let i = 0; i < types.length; i++) {
+                console.log("types");
+                console.log(types[i].id);
+                TypeController.deleteLocal(req, res, type[i].id);
               }
+
+              Company.findByPk(id)
+                .then((company) => {
+                  if (!company) {
+                    return res.status(400).send({
+                      message: `Cannot delete company with id=${id}. Maybe company was not found!`,
+                    });
+                  } else {
+                    company
+                      .destroy()
+                      .then(() => {
+                        console.log("deleted company");
+                        return res.send({
+                          message: "company was deleted successfully!",
+                        });
+                      })
+                      .catch((err) => {
+                        return res.status(500).send({
+                          message:
+                            err.message ||
+                            "Could not delete company with id=" + id,
+                        });
+                      });
+                  }
+                })
+                .catch((err) => {
+                  return res.status(500).send({
+                    message:
+                      err.message || "Could not find company with id=" + id,
+                  });
+                });
             })
             .catch((err) => {
               return res.status(500).send({

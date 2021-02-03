@@ -44,12 +44,7 @@ require("./app/routes/alert.routes")(app);
 require("./app/routes/autherizedUserPerMachine.routes")(app);
 require("./app/routes/userThatReceiveAlertsFromVendingMachine.routes")(app);
 require("./app/routes/company.routes")(app);
-
-// require("./app/routes/table.routes")(app);
-// require("./app/routes/team.routes")(app);
-// require("./app/routes/match.routes")(app);
-// require("./app/routes/ranking.routes")(app);
-// require("./app/routes/image.routes")(app);
+require("./app/routes/type.routes")(app);
 
 // db.user.belongsTo(db.type);
 // db.type.hasMany(db.user);
@@ -59,6 +54,9 @@ db.company.hasMany(db.user);
 
 db.authentication.belongsTo(db.user);
 db.authentication.belongsTo(db.vendingMachine);
+
+db.user.belongsTo(db.type);
+db.type.belongsTo(db.company);
 
 db.userThatReceiveAlertsFromVendingMachine.belongsTo(db.user);
 db.userThatReceiveAlertsFromVendingMachine.belongsTo(db.vendingMachine);
