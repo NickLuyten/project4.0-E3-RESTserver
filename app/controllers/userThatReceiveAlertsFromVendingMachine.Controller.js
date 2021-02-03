@@ -75,9 +75,9 @@ exports.create = async (req, res) => {
     });
   }
   if (
-    authJwt.cehckIfPermission(
+    !authJwt.cehckIfPermission(
       req,
-      permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE_COMPANY
+      permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE
     )
   ) {
     if (
@@ -136,9 +136,9 @@ exports.findOne = async (req, res) => {
         });
       else {
         if (
-          authJwt.cehckIfPermission(
+          !authJwt.cehckIfPermission(
             req,
-            permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_READ_COMPANY
+            permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_READ
           )
         ) {
           let vendingmachine;
@@ -218,9 +218,9 @@ exports.update = async (req, res) => {
 
 exports.findAll = async (req, res) => {
   if (
-    authJwt.cehckIfPermission(
+    !authJwt.cehckIfPermission(
       req,
-      permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE_COMPANY
+      permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE
     )
   ) {
     let vendingmachines;
@@ -310,9 +310,9 @@ exports.delete = async (req, res) => {
         });
       } else {
         if (
-          authJwt.cehckIfPermission(
+          !authJwt.cehckIfPermission(
             req,
-            permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_DELETE_COMPANY
+            permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_DELETE
           )
         ) {
           let vendingMachine;

@@ -229,9 +229,9 @@ exports.create = (req, res) => {
           });
         else {
           if (
-            authJwt.cehckIfPermission(
+            !authJwt.cehckIfPermission(
               req,
-              permission.VENDING_MACHINE_CREATE_COMPANY
+              permission.VENDING_MACHINE_CREATE
             )
           ) {
             if (req.authUser.companyId != company.id) {
@@ -289,9 +289,9 @@ exports.findOne = (req, res) => {
           .send({ message: "Not found vending machine with id " + id });
       else {
         if (
-          authJwt.cehckIfPermission(
+          !authJwt.cehckIfPermission(
             req,
-            permission.VENDING_MACHINE_READ_COMPANY
+            permission.VENDING_MACHINE_READ
           )
         ) {
           if (req.authUser.companyId != data.companyId) {
@@ -378,9 +378,9 @@ exports.update = async (req, res) => {
         }
       }
       if (
-        authJwt.cehckIfPermission(
+        !authJwt.cehckIfPermission(
           req,
-          permission.VENDING_MACHINE_UPDATE_COMPANY
+          permission.VENDING_MACHINE_UPDATE
         )
       ) {
         if (vendingMachine.companyId != req.authUser.companyId) {
@@ -441,9 +441,9 @@ exports.updateApiKey = async (req, res) => {
       });
     } else {
       if (
-        authJwt.cehckIfPermission(
+        !authJwt.cehckIfPermission(
           req,
-          permission.VENDING_MACHINE_UPDATE_COMPANY
+          permission.VENDING_MACHINE_UPDATE
         )
       ) {
         if (vendingMachine.companyId != req.authUser.companyId) {
@@ -671,14 +671,14 @@ exports.handgelbijvullen = async (req, res) => {
         });
       } else {
         if (
-          authJwt.cehckIfPermission(
+          !authJwt.cehckIfPermission(
             req,
-            permission.VENDING_MACHINE_UPDATE_COMPANY_REFILL
-          ) ||
-          authJwt.cehckIfPermission(
-            req,
-            permission.VENDING_MACHINE_UPDATE_COMPANY
-          )
+            permission.VENDING_MACHINE_UPDATE)
+          // ) ||
+          // authJwt.cehckIfPermission(
+          //   req,
+          //   permission.VENDING_MACHINE_UPDATE_COMPANY
+          // )
         ) {
           if (req.authUser.companyId != vendingMachine.companyId) {
             return res.status(400).send({
@@ -724,7 +724,7 @@ exports.handgelbijvullen = async (req, res) => {
 };
 
 exports.findAll = (req, res) => {
-  if (authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ_COMPANY)) {
+  if (!authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ)) {
     VendingMachine.findAll({
       where: {
         companyId: req.authUser.companyId,
@@ -756,7 +756,7 @@ exports.findAll = (req, res) => {
 
 exports.delete = async (req, res) => {
   const id = req.params.id;
-  if (authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ_COMPANY)) {
+  if (!authJwt.cehckIfPermission(req, permission.VENDING_MACHINE_READ)) {
     let vendingmachine;
     try {
       vendingmachine = await VendingMachine.findByPk(id);

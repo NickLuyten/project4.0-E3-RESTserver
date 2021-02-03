@@ -86,7 +86,7 @@ exports.createQrCodeForUser = (req, res) => {
   }
   User.findByPk(req.body.userId).then((user) => {
     if (
-      authJwt.cehckIfPermission(req, permission.AUTHENTICATION_CREATE_COMPANY)
+      !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_CREATE)
     ) {
       if (req.authUser.companyId != user.companyId) {
         return res.status(400).send({
@@ -144,7 +144,7 @@ exports.findByUserID = async (req, res) => {
         });
       else {
         if (
-          authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+          !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)
         ) {
           let user;
           try {
@@ -185,7 +185,7 @@ exports.findOne = async (req, res) => {
           .send({ message: "Not found authentication with id " + id });
       else {
         if (
-          authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+          !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)
         ) {
           console.log("vendingmachines");
           console.log(data.vendingMachineId);
@@ -253,7 +253,7 @@ exports.findByAuthenticationString = (req, res) => {
         });
       else {
         if (
-          authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+          !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)
         ) {
           console.log("vendingmachines");
           console.log(data.vendingMachineId);
@@ -335,9 +335,9 @@ exports.update = async (req, res) => {
                 });
               } else {
                 if (
-                  authJwt.cehckIfPermission(
+                  !authJwt.cehckIfPermission(
                     req,
-                    permission.AUTHENTICATION_UPDATE_COMPANY
+                    permission.AUTHENTICATION_UPDATE
                   )
                 ) {
                   console.log(req.authUser.companyId);
@@ -371,7 +371,7 @@ exports.update = async (req, res) => {
 
 // Find all Authentications
 exports.findAll = async (req, res) => {
-  if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+  if (!authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)) {
     let vendingmachines;
     try {
       vendingmachines = await VendingMachine.findAll({
@@ -446,9 +446,9 @@ exports.delete = (req, res) => {
         });
       } else {
         if (
-          authJwt.cehckIfPermission(
+          !authJwt.cehckIfPermission(
             req,
-            permission.AUTHENTICATION_UPDATE_COMPANY
+            permission.AUTHENTICATION_UPDATE
           )
         ) {
           User.findByPk(authentication.userId).then((user) => {

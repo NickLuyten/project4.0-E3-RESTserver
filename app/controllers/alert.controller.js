@@ -130,7 +130,7 @@ exports.findOne = (req, res) => {
           .status(400)
           .send({ message: "Not found alert with id " + id });
       } else {
-        if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+        if (!authJwt.cehckIfPermission(req, permission.ALERT_READ)) {
           VendingMachine.findByPk(data.vendingMachineId).then(
             (vendingmachine) => {
               if (vendingmachine.companyId == req.authUser.companyId) {
@@ -156,7 +156,7 @@ exports.findOne = (req, res) => {
 };
 
 exports.findAll = async (req, res) => {
-  if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+  if (!authJwt.cehckIfPermission(req, permission.ALERT_READ)) {
     let vendingmachines;
     try {
       vendingmachines = await VendingMachine.findAll({
@@ -209,7 +209,7 @@ exports.delete = (req, res) => {
           message: `alert with id=${id} was not found!`,
         });
       } else {
-        if (authJwt.cehckIfPermission(req, permission.ALERT_READ_COMPANY)) {
+        if (!authJwt.cehckIfPermission(req, permission.ALERT_READ)) {
           VendingMachine.findByPk(alert.vendingMachineId).then(
             (vendingmachine) => {
               if (vendingmachine.companyId != req.authUser.companyId) {

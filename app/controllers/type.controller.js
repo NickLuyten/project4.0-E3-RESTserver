@@ -67,7 +67,7 @@ exports.create = (req, res) => {
     if (!req.body.companyId) {
       req.body.companyId = req.authUser.companyId;
     }
-    if (authJwt.cehckIfPermission(req, permission.TYPE_CREATE_COMPANY)) {
+    if (!authJwt.cehckIfPermission(req, permission.TYPE_CREATE)) {
       if (req.authUser.companyId != req.body.companyId) {
         return res
           .status(401)
@@ -166,7 +166,7 @@ exports.update = async (req, res) => {
 };
 // Find all types
 exports.findAll = async (req, res) => {
-  if (authJwt.cehckIfPermission(req, permission.TYPE_READ_COMPANY)) {
+  if (!authJwt.cehckIfPermission(req, permission.TYPE_READ)) {
     Type.findAll({
       where: {
         companyId: req.authUser.companyId,
@@ -213,7 +213,7 @@ exports.delete = (req, res) => {
             });
           } else {
             if (
-              authJwt.cehckIfPermission(req, permission.TYPE_DELETE_COMPANY)
+              !authJwt.cehckIfPermission(req, permission.TYPE_DELETE)
             ) {
               if (req.authUser.companyId == type.companyId) {
                 type
@@ -280,7 +280,7 @@ exports.deleteLocal = (req, res, id) => {
             });
           } else {
             if (
-              authJwt.cehckIfPermission(req, permission.TYPE_DELETE_COMPANY)
+              !authJwt.cehckIfPermission(req, permission.TYPE_DELETE)
             ) {
               if (req.authUser.companyId == type.companyId) {
                 type
