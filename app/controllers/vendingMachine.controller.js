@@ -470,8 +470,7 @@ userAutherizedForVendingmachine = (userId, vendingMachineId) => {
 exports.handgelAfhalen = async (req, res) => {
   const id = req.authVendingMachine.id;
   const uuid = req.body.authentication;
-  console.log("uuid");
-  console.log(uuid);
+
   Authentication.findOne({
     where: {
       authentication: uuid,
@@ -504,13 +503,11 @@ exports.handgelAfhalen = async (req, res) => {
               }
               limit = type.sanitizerLimitPerMonth;
             } else {
-              limit = 0;
+              limit = null;
             }
 
             let greatherDate = new Date();
             greatherDate.setDate(greatherDate.getDate() - 30);
-            console.log("greatherDate");
-            console.log(greatherDate);
 
             Authentication.findAll({
               where: {
@@ -523,9 +520,6 @@ exports.handgelAfhalen = async (req, res) => {
                 },
               },
             }).then((authentications) => {
-              console.log("authentications.length");
-              console.log(authentications.length + "  /  " + limit);
-
               if (authentications.length >= limit && limit !== null) {
                 return res.status(400).send({
                   message: "limit reached id=" + authentication.userId,
@@ -537,8 +531,6 @@ exports.handgelAfhalen = async (req, res) => {
                     vendingMachineId: id,
                   },
                 }).then((userAutherizedForVendingmachine) => {
-                  console.log("userAutherizedForVendingmachine");
-                  console.log(userAutherizedForVendingmachine);
                   if (!userAutherizedForVendingmachine) {
                     return res.status(400).send({
                       message: "Error user not autherized for vending machines",
@@ -546,8 +538,6 @@ exports.handgelAfhalen = async (req, res) => {
                   } else {
                     VendingMachine.findByPk(id)
                       .then((vendingMachine) => {
-                        console.log("vendingMachine");
-                        console.log(vendingMachine);
                         if (!vendingMachine) {
                           return res.status(400).send({
                             message: `Cannot get vending machine with id=${id}. Maybe vending machine was not found!`,
@@ -574,10 +564,6 @@ exports.handgelAfhalen = async (req, res) => {
                                     message: `Cannot updated vending machine with id=${id}`,
                                   });
                                 } else {
-                                  console.log("authentication");
-                                  console.log(authentication);
-                                  console.log(authentication.vendingMachineId);
-                                  console.log(updatedVendingMachine.id);
                                   authentication.vendingMachineId =
                                     updatedVendingMachine.id;
                                   authentication
