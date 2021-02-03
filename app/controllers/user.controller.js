@@ -949,6 +949,9 @@ exports.handgelLimit = async (req, res) => {
         },
       }).then((authentications) => {
         console.log(authentications.length + "  /  " + limit);
+        if (limit == null) {
+          limit = "∞";
+        }
         return res.send({
           result: { handgels: authentications.length + "  /  " + limit },
         });
