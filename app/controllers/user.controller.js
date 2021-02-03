@@ -433,8 +433,10 @@ exports.update = async (req, res) => {
       });
     }
   }
+  let type;
+  console.log(req.body.typeId);
   if (req.body.typeId) {
-    let type;
+    console.log("getType");
     try {
       type = await Type.findByPk(req.body.typeId);
     } catch (err) {
@@ -443,6 +445,7 @@ exports.update = async (req, res) => {
           err.message || "Error retrieving type with id: " + req.body.typeId,
       });
     }
+    console.log(type);
     if (!type) {
       return res.status(400).send({
         message:
@@ -450,12 +453,6 @@ exports.update = async (req, res) => {
           req.body.typeId +
           " was not found while creating a user",
       });
-    } else {
-      if (type.companyId != req.authUser.typeId) {
-        return res.status(400).send({
-          message: "The type doesn't belong to your company",
-        });
-      }
     }
   }
 
@@ -519,6 +516,15 @@ exports.update = async (req, res) => {
           });
         }
       }
+      if (
+        req.body.typeId &&
+        ((!req.body.companyId && type.companyId != user.companyId) ||
+          (req.body.companyId && type.companyId != req.body.companyId))
+      ) {
+        return res.status(400).send({
+          message: "The type doesn't belong to your company",
+        });
+      }
       user.update(req.body).then((updatedUser) => {
         if (!updatedUser) {
           return res.status(400).send({
@@ -577,7 +583,7 @@ exports.updatePassword = async (req, res) => {
 // Find all users
 exports.findAll = (req, res) => {
   console.log("user model : " + User);
-  if (!authJwt.cehckIfPermission(req, permission.USER_CREATE)) {
+  if (!authJwt.cehckIfPermission(req, permission.USER_READ)) {
     User.findAll({
       where: {
         companyId: req.authUser.companyId,
@@ -604,6 +610,25 @@ exports.findAll = (req, res) => {
           .send({ message: err.message || "Error retrieving users" });
       });
   }
+};
+
+exports.findAllForCompany = (req, res) => {
+  const id = req.params.id;
+
+  User.findAll({
+    where: {
+      companyId: id,
+    },
+  })
+    .then((users) => {
+      if (!users) return res.status(400).send({ message: "No users found" });
+      return res.send(returnUsers(users));
+    })
+    .catch((err) => {
+      return res
+        .status(500)
+        .send({ message: err.message || "Error retrieving users" });
+    });
 };
 
 exports.delete = async (req, res) => {
