@@ -14,6 +14,7 @@ const { Op } = require("sequelize");
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
 const permissions = require("../const/permissions");
+const Type = db.type;
 
 //helper function to validate userfields
 validateUserFields = (req, isRequired) => {
@@ -67,6 +68,10 @@ validateUserFields = (req, isRequired) => {
   if (!req.body.companyId && isRequired) {
     validationMessages.push("CompanyId is required.");
   }
+  //type vallidation
+  if (!req.body.typeId && isRequired) {
+    validationMessages.push("typeId is required.");
+  }
 
   return validationMessages;
 };
@@ -115,9 +120,9 @@ returnUserWithToken = (data) => {
       admin: data.admin,
       guest: data.guest,
       companyId: data.companyId,
+      typeId: data.typeId,
       accessToken: createToken(data),
       permissions: JSON.parse(data.permissions),
-      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     },
   };
 };
@@ -133,8 +138,8 @@ returnUserLimited = (data) => {
       admin: data.admin,
       guest: data.guest,
       companyId: data.companyId,
+      typeId: data.typeId,
       permissions: JSON.parse(data.permissions),
-      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
     },
   };
 };
@@ -148,7 +153,7 @@ returnUserLimitedLocal = (data) => {
     admin: data.admin,
     guest: data.guest,
     companyId: data.companyId,
-    sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
+    typeId: data.typeId,
     permissions: JSON.parse(data.permissions),
   };
 };
@@ -163,7 +168,7 @@ returnUsers = (data) => {
       admin: data.admin,
       guest: data.guest,
       companyId: data.companyId,
-      sanitizerLimitPerMonth: data.sanitizerLimitPerMonth,
+      typeId: data.typeId,
       permissions: JSON.parse(data.permissions),
     })),
   };
@@ -206,81 +211,97 @@ exports.create = (req, res) => {
               " was not found while creating a user",
           });
         } else {
-          console.log("sanitizerLimitPerMonth");
-          //check permissions
-          let permissionsRequest = JSON.parse(req.body.permissions);
-          console.log(permissionsRequest);
-          let permissionsDoNotMatch = false;
+          Type.findByPk(req.body.typeId)
+            .then((type) => {
+              if (!type) {
+                return res.status(400).send({
+                  message:
+                    "The type with id " +
+                    req.body.typeId +
+                    " was not found while creating a user",
+                });
+              } else {
+                console.log("sanitizerLimitPerMonth");
+                //check permissions
+                let permissionsRequest = JSON.parse(req.body.permissions);
+                console.log(permissionsRequest);
+                let permissionsDoNotMatch = false;
 
-          for (let i = 0; i < permissionsRequest.length; i++) {
-            if (permissions.test.indexOf(permissionsRequest[i]) == -1) {
-              permissionsDoNotMatch = true;
-              i = permissionsRequest.length;
-            }
-          }
-          if (permissionsDoNotMatch) {
-            return res.status(400).send({
-              message:
-                "The user permissions do not match with known permissions",
-            });
-          } else {
-            //check if permissions are lower or the same as the user that created this user
-            let authUserPermission = JSON.parse(req.authUser.permissions);
-            let ToHighPermissions = false;
-            console.log(authUserPermission);
-            console.log(permissionsRequest);
-
-            let alternatif;
-            for (let i = 0; i < permissionsRequest.length; i++) {
-              if (authUserPermission.indexOf(permissionsRequest[i]) == -1) {
-                alternatif = permissionsRequest[i].replace("_OWN", "");
-                if (authUserPermission.indexOf(alternatif) == -1) {
-                  alternatif = alternatif.replace("_COMPANY", "");
-                  if (authUserPermission.indexOf(alternatif) == -1) {
-                    ToHighPermissions = true;
+                for (let i = 0; i < permissionsRequest.length; i++) {
+                  if (permissions.test.indexOf(permissionsRequest[i]) == -1) {
+                    permissionsDoNotMatch = true;
                     i = permissionsRequest.length;
                   }
                 }
-              }
-            }
-            if (ToHighPermissions) {
-              return res.status(400).send({
-                message:
-                  "The user permissions are to high and cannot be given because the user who is creating this user doesn't have the permissions",
-              });
-            } else {
-              if (!req.body.sanitizerLimitPerMonth) {
-                req.body.sanitizerLimitPerMonth = 0;
-              }
-              console.log("user");
-              let user = new User({
-                firstName: req.body.firstName,
-                lastName: req.body.lastName,
-                email: req.body.email,
-                password: bcrypt.hashSync(req.body.password, 8),
-                admin: req.body.admin,
-                guest: req.body.guest,
-                companyId: req.body.companyId,
-                sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
-                permissions: JSON.stringify(permissionsRequest),
-              });
-
-              User.findOne({
-                where: {
-                  email: req.body.email,
-                },
-              }).then((response) => {
-                console.log("response : " + response);
-                if (response == null || response.length == 0) {
-                  storeUserInDatabase(user, res);
-                } else {
+                if (permissionsDoNotMatch) {
                   return res.status(400).send({
-                    message: `Already exists an account with this email: ${user.email}`,
+                    message:
+                      "The user permissions do not match with known permissions",
                   });
+                } else {
+                  //check if permissions are lower or the same as the user that created this user
+                  let authUserPermission = JSON.parse(req.authUser.permissions);
+                  let ToHighPermissions = false;
+                  console.log(authUserPermission);
+                  console.log(permissionsRequest);
+
+                  let alternatif;
+                  for (let i = 0; i < permissionsRequest.length; i++) {
+                    if (
+                      authUserPermission.indexOf(permissionsRequest[i]) == -1
+                    ) {
+                      alternatif = permissionsRequest[i].replace("_OWN", "");
+                      if (authUserPermission.indexOf(alternatif) == -1) {
+                        alternatif = alternatif.replace("_COMPANY", "");
+                        if (authUserPermission.indexOf(alternatif) == -1) {
+                          ToHighPermissions = true;
+                          i = permissionsRequest.length;
+                        }
+                      }
+                    }
+                  }
+                  if (ToHighPermissions) {
+                    return res.status(400).send({
+                      message:
+                        "The user permissions are to high and cannot be given because the user who is creating this user doesn't have the permissions",
+                    });
+                  } else {
+                    console.log("user");
+                    let user = new User({
+                      firstName: req.body.firstName,
+                      lastName: req.body.lastName,
+                      email: req.body.email,
+                      password: bcrypt.hashSync(req.body.password, 8),
+                      admin: req.body.admin,
+                      guest: req.body.guest,
+                      companyId: req.body.companyId,
+                      typeId: req.body.typeId,
+                      permissions: JSON.stringify(permissionsRequest),
+                    });
+
+                    User.findOne({
+                      where: {
+                        email: req.body.email,
+                      },
+                    }).then((response) => {
+                      console.log("response : " + response);
+                      if (response == null || response.length == 0) {
+                        storeUserInDatabase(user, res);
+                      } else {
+                        return res.status(400).send({
+                          message: `Already exists an account with this email: ${user.email}`,
+                        });
+                      }
+                    });
+                  }
                 }
+              }
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message: "error creating user  error : " + err,
               });
-            }
-          }
+            });
         }
       })
       .catch((err) => {
@@ -412,6 +433,32 @@ exports.update = async (req, res) => {
       });
     }
   }
+  if (req.body.typeId) {
+    let type;
+    try {
+      type = await Type.findByPk(req.body.typeId);
+    } catch (err) {
+      return res.status(500).send({
+        message:
+          err.message || "Error retrieving type with id: " + req.body.typeId,
+      });
+    }
+    if (!type) {
+      return res.status(400).send({
+        message:
+          "The type with id " +
+          req.body.typeId +
+          " was not found while creating a user",
+      });
+    } else {
+      if (type.companyId != req.authUser.typeId) {
+        return res.status(400).send({
+          message: "The type doesn't belong to your company",
+        });
+      }
+    }
+  }
+
   console.log("update2");
 
   if (req.body.permissions) {
@@ -456,7 +503,6 @@ exports.update = async (req, res) => {
     }
   }
 
-  
   console.log("update4");
 
   const id = req.params.id;
@@ -484,7 +530,6 @@ exports.update = async (req, res) => {
       });
     }
   });
-
 };
 
 // Update a user
@@ -762,14 +807,34 @@ exports.deleteLocal = (req, res, id) => {
     });
 };
 // Creates an admin
-exports.createAdmin = (req, res) => {
+exports.createAdmin = async (req, res) => {
   console.log("create function");
   let validationMessages = validateUserFields(req, false);
 
   // If request not valid, return messages
   if (validationMessages.length != 0) {
+    console.log("test");
     return res.status(400).send({ messages: validationMessages });
   } else {
+    console.log("test2");
+
+    // let type;
+    // try {
+    //   type = await Type.findByPk(req.body.typeId);
+    // } catch (error) {
+    //   return res.status(500).send({
+    //     message:
+    //       error.message || "error occured when getting type in create admin",
+    //   });
+    // }
+    // if (!type) {
+    //   return res.status(400).send({
+    //     message:
+    //       "The type with id " +
+    //       req.body.typeId +
+    //       " was not found while creating a admin",
+    //   });
+    // }
     req.body.admin = true;
     // Create a user
     let user = new User({
@@ -778,8 +843,8 @@ exports.createAdmin = (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8),
       admin: req.body.admin,
-      sanitizerLimitPerMonth: req.body.sanitizerLimitPerMonth,
       companyId: req.body.companyId,
+      typeId: req.body.companyId,
       permissions: JSON.stringify(permissions.adminPermissions),
     });
     User.findOne({
@@ -817,13 +882,31 @@ exports.findOneLocal = async (id) => {
 exports.handgelLimit = async (req, res) => {
   const id = req.params.id;
 
-  User.findByPk(id).then((user) => {
+  User.findByPk(id).then(async (user) => {
     if (!user) {
       return res.status(400).send({
         message: "user not found with id=" + authentication.userId,
       });
     } else {
-      let limit = user.sanitizerLimitPerMonth;
+      let type;
+      try {
+        type = await Type.findByPk(user.typeId);
+      } catch (error) {
+        return res.status(500).send({
+          message:
+            err.message || "Error retrieving type with id: " + req.body.typeId,
+        });
+      }
+      if (!type) {
+        return res.status(400).send({
+          message:
+            "The type with id " +
+            req.body.typeId +
+            " was not found while creating a user",
+        });
+      }
+
+      let limit = type.sanitizerLimitPerMonth;
       let greatherDate = new Date();
       greatherDate.setDate(greatherDate.getDate() - 30);
       console.log("greatherDate");

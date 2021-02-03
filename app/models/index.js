@@ -20,5 +20,5 @@ db.userThatReceiveAlertsFromVendingMachine = require("./userThatReceiveAlertsFro
   sequelize
 );
 db.company = require("./company.model")(Sequelize, sequelize);
-// db.type = require("./type.model.js")(Sequelize, sequelize);
+db.type = require("./type.model.js")(Sequelize, sequelize);
 module.exports = db;

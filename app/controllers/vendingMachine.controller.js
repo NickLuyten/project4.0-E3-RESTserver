@@ -1,6 +1,7 @@
 const db = require("./../models/index");
 const VendingMachine = db.vendingMachine;
 const Authentication = db.authentication;
+const Type = db.type;
 const AutherizedUserPerMachine = db.autherizedUserPerMachine;
 const Alert = db.alert;
 const alertTypes = require("./../const/alertTypes");
@@ -502,13 +503,28 @@ exports.handgelAfhalen = async (req, res) => {
             "Not found authentication with authentication string " + uuid,
         });
       else {
-        User.findByPk(authentication.userId).then((user) => {
+        User.findByPk(authentication.userId).then(async (user) => {
           if (!user) {
             return res.status(400).send({
               message: "user not found with id=" + authentication.userId,
             });
           } else {
-            let limit = user.sanitizerLimitPerMonth;
+            let limit;
+            if (user.typeId !== null) {
+              let type;
+              try {
+                type = await Type.findByPk(user.typeId);
+              } catch (error) {
+                return res.status(500).send({
+                  message:
+                    "there occured an error when getting the type in getting a handgel",
+                });
+              }
+              limit = type.sanitizerLimitPerMonth;
+            } else {
+              limit = 0;
+            }
+
             let greatherDate = new Date();
             greatherDate.setDate(greatherDate.getDate() - 30);
             console.log("greatherDate");
