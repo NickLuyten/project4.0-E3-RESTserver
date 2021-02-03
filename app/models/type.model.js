@@ -12,7 +12,7 @@ module.exports = (Sequelize, sequelize) => {
     },
     sanitizerLimitPerMonth: {
       type: Sequelize.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
   });
 
