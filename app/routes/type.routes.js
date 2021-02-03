@@ -20,6 +20,8 @@ module.exports = (app) => {
     [authJwt.verifyToken, authJwt.hasPermission(permission.TYPE_READ_COMPANY)],
     type.findAll
   );
+
+  //retreive all types for a company
   router.get(
     "/company/:id",
     [authJwt.verifyToken, authJwt.hasPermission(permission.TYPE_READ_COMPANY)],

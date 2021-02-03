@@ -25,11 +25,13 @@ module.exports = (app) => {
     [authJwt.verifyToken, authJwt.hasPermission(permission.USER_READ_COMPANY)],
     users.findAll
   );
-  // router.get(
-  //   "/company/:id",
-  //   [authJwt.verifyToken, authJwt.hasPermission(permission.USER_READ_COMPANY)],
-  //   users.findAllForCompany
-  // );
+
+  //retreive all users for a company
+  router.get(
+    "/company/:id",
+    [authJwt.verifyToken, authJwt.hasPermission(permission.USER_READ_COMPANY)],
+    users.findAllForCompany
+  );
 
   // Retrieve a single user with id
   router.get(
