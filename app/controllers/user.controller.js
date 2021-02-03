@@ -189,7 +189,7 @@ exports.create = (req, res) => {
     }
     console.log("req.body.companyId : " + req.body.companyId);
 
-    if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+    if (!authJwt.cehckIfPermission(req, permission.USER_CREATE)) {
       if (req.body.companyId != req.authUser.companyId) {
         return res.status(400).send({
           message: "unautherized you can only create users for your company",
@@ -372,7 +372,7 @@ exports.findOne = (req, res) => {
           .status(400)
           .send({ message: "Not found user with id " + id });
       else {
-        if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+        if (!authJwt.cehckIfPermission(req, permission.USER_CREATE)) {
           if (data.companyId != req.authUser.companyId) {
             return res.status(400).send({
               message:
@@ -407,7 +407,7 @@ exports.update = async (req, res) => {
     req.body.password = bcrypt.hashSync(req.body.password, 8);
   }
   if (req.body.companyId) {
-    if (authJwt.cehckIfPermission(req, permission.USER_UPDATE_COMPANY)) {
+    if (!authJwt.cehckIfPermission(req, permission.USER_UPDATE)) {
       if (req.body.companyId != req.authUser.companyId) {
         return res.status(400).send({
           message: `unautherized you can not update the company of a user`,
@@ -512,7 +512,7 @@ exports.update = async (req, res) => {
         message: `Cannot get user with id=${id}. Maybe user was not found!`,
       });
     } else {
-      if (authJwt.cehckIfPermission(req, permission.USER_UPDATE_COMPANY)) {
+      if (!authJwt.cehckIfPermission(req, permission.USER_UPDATE)) {
         if (user.companyId != req.authUser.companyId) {
           return res.status(400).send({
             message: `unautherized you can not update the user of another company`,
@@ -553,7 +553,7 @@ exports.updatePassword = async (req, res) => {
         message: `Cannot get user with id=${id}. Maybe user was not found!`,
       });
     } else {
-      if (authJwt.cehckIfPermission(req, permission.USER_UPDATE_COMPANY)) {
+      if (!authJwt.cehckIfPermission(req, permission.USER_UPDATE)) {
         if (user.companyId != req.authUser.companyId) {
           return res.status(400).send({
             message: `unautherized you can not update the user of another company`,
@@ -577,7 +577,7 @@ exports.updatePassword = async (req, res) => {
 // Find all users
 exports.findAll = (req, res) => {
   console.log("user model : " + User);
-  if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+  if (!authJwt.cehckIfPermission(req, permission.USER_CREATE)) {
     User.findAll({
       where: {
         companyId: req.authUser.companyId,
@@ -618,7 +618,7 @@ exports.delete = async (req, res) => {
   }
   if (!checkifUserFromSameCompany) {
   } else {
-    if (authJwt.cehckIfPermission(req, permission.USER_CREATE_COMPANY)) {
+    if (!authJwt.cehckIfPermission(req, permission.USER_CREATE)) {
       if (checkifUserFromSameCompany.companyId != req.authUser.companyId) {
         return res.status(400).send({
           message: `unautherized you can not delete the user of another company`,

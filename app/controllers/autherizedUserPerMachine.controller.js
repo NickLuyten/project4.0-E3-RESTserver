@@ -59,9 +59,9 @@ exports.create = (req, res) => {
               });
             } else {
               if (
-                authJwt.cehckIfPermission(
+                !authJwt.cehckIfPermission(
                   req,
-                  permission.AUTHENTICATION_CREATE_COMPANY
+                  permission.AUTHERIZED_USER_PER_MACHINE_CREATE
                 )
               ) {
                 if (
@@ -133,9 +133,9 @@ exports.findOne = (req, res) => {
             } else {
               console.log("test");
               if (
-                authJwt.cehckIfPermission(
+                !authJwt.cehckIfPermission(
                   req,
-                  permission.AUTHENTICATION_READ_COMPANY
+                  permission.AUTHERIZED_USER_PER_MACHINE_READ
                 )
               ) {
                 if (vendingmachine.companyId != req.authUser.companyId) {
@@ -163,7 +163,9 @@ exports.findOne = (req, res) => {
 };
 // Find all AutherizedUserPerMachine
 exports.findAll = async (req, res) => {
-  if (authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)) {
+  if (
+    !authJwt.cehckIfPermission(req, permission.AUTHERIZED_USER_PER_MACHINE_READ)
+  ) {
     let vendingmachines;
     try {
       vendingmachines = await VendingMachine.findAll({
@@ -244,7 +246,10 @@ exports.findAllAuthenticatedUsersForVendingMachine = (req, res) => {
       });
     } else {
       if (
-        authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ_COMPANY)
+        !authJwt.cehckIfPermission(
+          req,
+          permission.AUTHERIZED_USER_PER_MACHINE_READ
+        )
       ) {
         if (vendingMachine.companyId != req.authUser.companyId) {
           return res.status(400).send({
@@ -295,9 +300,9 @@ exports.deleteWithVendingMachineAndUser = (req, res) => {
       } else {
         const id = autherizedUserPerMachine.id;
         if (
-          authJwt.cehckIfPermission(
+          !authJwt.cehckIfPermission(
             req,
-            permission.AUTHENTICATION_DELETE_COMPANY
+            permission.AUTHERIZED_USER_PER_MACHINE_DELETE
           )
         ) {
           VendingMachine.findByPk(
@@ -371,9 +376,9 @@ exports.delete = (req, res) => {
         });
       } else {
         if (
-          authJwt.cehckIfPermission(
+          !authJwt.cehckIfPermission(
             req,
-            permission.AUTHENTICATION_DELETE_COMPANY
+            permission.AUTHERIZED_USER_PER_MACHINE_DELETE
           )
         ) {
           VendingMachine.findByPk(
