@@ -179,7 +179,7 @@ isUserOrAdmin = (req, res, next) => {
   }
 };
 
-cehckIfPermission = (req, permission) => {
+checkIfPermission = (req, permission) => {
   if (req.authUser.permissions.includes(permission)) {
     return true;
   } else {
@@ -215,7 +215,7 @@ const authJwt = {
   hasUserPriviliges,
   isUserOrAdmin,
   hasPermission,
-  cehckIfPermission,
+  checkIfPermission,
   isVendingMachine,
 };
 module.exports = authJwt;

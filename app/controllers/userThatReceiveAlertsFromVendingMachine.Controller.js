@@ -92,7 +92,7 @@ exports.create = async (req, res) => {
     });
   }
   if (
-    !authJwt.cehckIfPermission(
+    !authJwt.checkIfPermission(
       req,
       permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE
     )
@@ -153,7 +153,7 @@ exports.findOne = async (req, res) => {
         });
       else {
         if (
-          !authJwt.cehckIfPermission(
+          !authJwt.checkIfPermission(
             req,
             permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_READ
           )
@@ -235,7 +235,7 @@ exports.update = async (req, res) => {
 
 exports.findAll = async (req, res) => {
   if (
-    !authJwt.cehckIfPermission(
+    !authJwt.checkIfPermission(
       req,
       permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_CREATE
     )
@@ -344,7 +344,7 @@ exports.delete = async (req, res) => {
         });
       } else {
         if (
-          !authJwt.cehckIfPermission(
+          !authJwt.checkIfPermission(
             req,
             permission.USER_THAT_RECEIVE_ALERTS_FROM_VENDING_MACHINE_DELETE
           )
