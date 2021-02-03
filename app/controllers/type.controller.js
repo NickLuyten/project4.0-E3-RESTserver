@@ -18,8 +18,11 @@ validateTypeFields = (req, isRequired) => {
       validationMessages.push("name can not be longer than 24 characters");
     }
   }
-  if (req.body.sanitizerLimitPerMonth) {
-    if (req.body.sanitizerLimitPerMonth >= 0) {
+  if (
+    req.body.sanitizerLimitPerMonth &&
+    isNaN(req.body.sanitizerLimitPerMonth)
+  ) {
+    if (Number(req.body.sanitizerLimitPerMonth) >= 0) {
       validationMessages.push(
         "sanitizerLimitPerMonth needs to be higher or equal to 0"
       );
