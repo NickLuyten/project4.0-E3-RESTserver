@@ -59,7 +59,7 @@ exports.create = (req, res) => {
               });
             } else {
               if (
-                !authJwt.cehckIfPermission(
+                !authJwt.checkIfPermission(
                   req,
                   permission.AUTHERIZED_USER_PER_MACHINE_CREATE
                 )
@@ -133,7 +133,7 @@ exports.findOne = (req, res) => {
             } else {
               console.log("test");
               if (
-                !authJwt.cehckIfPermission(
+                !authJwt.checkIfPermission(
                   req,
                   permission.AUTHERIZED_USER_PER_MACHINE_READ
                 )
@@ -164,7 +164,7 @@ exports.findOne = (req, res) => {
 // Find all AutherizedUserPerMachine
 exports.findAll = async (req, res) => {
   if (
-    !authJwt.cehckIfPermission(req, permission.AUTHERIZED_USER_PER_MACHINE_READ)
+    !authJwt.checkIfPermission(req, permission.AUTHERIZED_USER_PER_MACHINE_READ)
   ) {
     let vendingmachines;
     try {
@@ -246,7 +246,7 @@ exports.findAllAuthenticatedUsersForVendingMachine = (req, res) => {
       });
     } else {
       if (
-        !authJwt.cehckIfPermission(
+        !authJwt.checkIfPermission(
           req,
           permission.AUTHERIZED_USER_PER_MACHINE_READ
         )
@@ -300,7 +300,7 @@ exports.deleteWithVendingMachineAndUser = (req, res) => {
       } else {
         const id = autherizedUserPerMachine.id;
         if (
-          !authJwt.cehckIfPermission(
+          !authJwt.checkIfPermission(
             req,
             permission.AUTHERIZED_USER_PER_MACHINE_DELETE
           )
@@ -376,7 +376,7 @@ exports.delete = (req, res) => {
         });
       } else {
         if (
-          !authJwt.cehckIfPermission(
+          !authJwt.checkIfPermission(
             req,
             permission.AUTHERIZED_USER_PER_MACHINE_DELETE
           )

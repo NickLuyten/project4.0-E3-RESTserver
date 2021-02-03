@@ -85,9 +85,7 @@ exports.createQrCodeForUser = (req, res) => {
     });
   }
   User.findByPk(req.body.userId).then((user) => {
-    if (
-      !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_CREATE)
-    ) {
+    if (!authJwt.checkIfPermission(req, permission.AUTHENTICATION_CREATE)) {
       if (req.authUser.companyId != user.companyId) {
         return res.status(400).send({
           message:
@@ -143,9 +141,7 @@ exports.findByUserID = async (req, res) => {
           message: "there is no authentication string for this user " + id,
         });
       else {
-        if (
-          !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)
-        ) {
+        if (!authJwt.checkIfPermission(req, permission.AUTHENTICATION_READ)) {
           let user;
           try {
             user = await User.findByPk(data.userId);
@@ -184,9 +180,7 @@ exports.findOne = async (req, res) => {
           .status(400)
           .send({ message: "Not found authentication with id " + id });
       else {
-        if (
-          !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)
-        ) {
+        if (!authJwt.checkIfPermission(req, permission.AUTHENTICATION_READ)) {
           console.log("vendingmachines");
           console.log(data.vendingMachineId);
           let vendingmachines = null;
@@ -252,9 +246,7 @@ exports.findByAuthenticationString = (req, res) => {
             "Not found authentication with authentication string " + uuid,
         });
       else {
-        if (
-          !authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)
-        ) {
+        if (!authJwt.checkIfPermission(req, permission.AUTHENTICATION_READ)) {
           console.log("vendingmachines");
           console.log(data.vendingMachineId);
           let vendingmachines = null;
@@ -335,7 +327,7 @@ exports.update = async (req, res) => {
                 });
               } else {
                 if (
-                  !authJwt.cehckIfPermission(
+                  !authJwt.checkIfPermission(
                     req,
                     permission.AUTHENTICATION_UPDATE
                   )
@@ -371,7 +363,7 @@ exports.update = async (req, res) => {
 
 // Find all Authentications
 exports.findAll = async (req, res) => {
-  if (!authJwt.cehckIfPermission(req, permission.AUTHENTICATION_READ)) {
+  if (!authJwt.checkIfPermission(req, permission.AUTHENTICATION_READ)) {
     let vendingmachines;
     try {
       vendingmachines = await VendingMachine.findAll({
@@ -445,12 +437,7 @@ exports.delete = (req, res) => {
           message: `Cannot delete authentication with id=${id}. Maybe authentication was not found!`,
         });
       } else {
-        if (
-          !authJwt.cehckIfPermission(
-            req,
-            permission.AUTHENTICATION_UPDATE
-          )
-        ) {
+        if (!authJwt.checkIfPermission(req, permission.AUTHENTICATION_UPDATE)) {
           User.findByPk(authentication.userId).then((user) => {
             if (!user) {
               return res.status(400).send({

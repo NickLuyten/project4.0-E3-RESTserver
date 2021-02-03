@@ -69,7 +69,7 @@ exports.create = (req, res) => {
     if (!req.body.companyId) {
       req.body.companyId = req.authUser.companyId;
     }
-    if (!authJwt.cehckIfPermission(req, permission.TYPE_CREATE)) {
+    if (!authJwt.checkIfPermission(req, permission.TYPE_CREATE)) {
       if (req.authUser.companyId != req.body.companyId) {
         return res
           .status(401)
@@ -114,7 +114,7 @@ exports.findOne = async (req, res) => {
           .status(400)
           .send({ message: "Not found type with id " + id });
       else {
-        if (!authJwt.cehckIfPermission(req, permission.TYPE_READ)) {
+        if (!authJwt.checkIfPermission(req, permission.TYPE_READ)) {
           return res
             .status(401)
             .send({ message: "Not autherized to get the type with id " + id });
@@ -148,7 +148,7 @@ exports.update = async (req, res) => {
       if (req.body.sanitizerLimitPerMonth) {
         type.sanitizerLimitPerMonth = req.body.sanitizerLimitPerMonth;
       }
-      if (!authJwt.cehckIfPermission(req, permission.TYPE_UPDATE)) {
+      if (!authJwt.checkIfPermission(req, permission.TYPE_UPDATE)) {
         if (type.companyId != req.authUser.companyId) {
           return res.status(401).send({
             message: "Not autherized to update the type with id " + id,
@@ -169,7 +169,7 @@ exports.update = async (req, res) => {
 };
 // Find all types
 exports.findAll = async (req, res) => {
-  if (!authJwt.cehckIfPermission(req, permission.TYPE_READ)) {
+  if (!authJwt.checkIfPermission(req, permission.TYPE_READ)) {
     Type.findAll({
       where: {
         companyId: req.authUser.companyId,
@@ -198,7 +198,7 @@ exports.findAll = async (req, res) => {
   }
 };
 exports.findAllTypesWithCompanyId = async (req, res) => {
-  if (!authJwt.cehckIfPermission(req, permission.TYPE_READ)) {
+  if (!authJwt.checkIfPermission(req, permission.TYPE_READ)) {
     Type.findAll({
       where: {
         companyId: req.authUser.companyId,
@@ -244,7 +244,7 @@ exports.delete = (req, res) => {
               message: `Cannot delete type with id=${id}. Maybe type was not found!`,
             });
           } else {
-            if (!authJwt.cehckIfPermission(req, permission.TYPE_DELETE)) {
+            if (!authJwt.checkIfPermission(req, permission.TYPE_DELETE)) {
               if (req.authUser.companyId == type.companyId) {
                 type
                   .destroy()
@@ -309,7 +309,7 @@ exports.deleteLocal = (req, res, id) => {
               message: `Cannot delete type with id=${id}. Maybe type was not found!`,
             });
           } else {
-            if (!authJwt.cehckIfPermission(req, permission.TYPE_DELETE)) {
+            if (!authJwt.checkIfPermission(req, permission.TYPE_DELETE)) {
               if (req.authUser.companyId == type.companyId) {
                 type
                   .destroy()
