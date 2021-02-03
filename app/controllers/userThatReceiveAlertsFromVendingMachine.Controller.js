@@ -39,13 +39,15 @@ returnUserThatReceiveAlertsFromVendingMachines = (data) => {
   return {
     results: data.map((data) => ({
       id: data.id,
-      user: returnUser(data.user),
-      vendingMachine: returnVendingMachine(data.vendingMachine),
+      user: returnUserForUserThatReceiveAlertsFromVendingMachines(data.user),
+      vendingMachine: returnVendingMachineForUserThatReceiveAlertsFromVendingMachines(
+        data.vendingMachine
+      ),
     })),
   };
 };
 
-returnUser = (data) => {
+returnUserForUserThatReceiveAlertsFromVendingMachines = (data) => {
   return {
     id: data.id,
     firstName: data.firstName,
@@ -54,7 +56,7 @@ returnUser = (data) => {
   };
 };
 
-returnVendingMachine = (data) => {
+returnVendingMachineForUserThatReceiveAlertsFromVendingMachines = (data) => {
   return {
     id: data.id,
     name: data.name,
