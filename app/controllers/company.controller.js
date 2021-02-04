@@ -244,7 +244,7 @@ exports.delete = (req, res) => {
               for (let i = 0; i < types.length; i++) {
                 console.log("types");
                 console.log(types[i].id);
-                TypeController.deleteLocal(req, res, type[i].id);
+                TypeController.deleteLocal(req, res, types[i].id);
               }
 
               Company.findByPk(id)
