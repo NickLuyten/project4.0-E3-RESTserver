@@ -348,11 +348,13 @@ exports.update = async (req, res) => {
             isNaN(req.body.maxNumberOfProducts) ||
             Number(req.body.stock) > Number(req.body.maxNumberOfProducts))
         ) {
+          console.log("test1");
           return res.status(400).send({
             message: `the vendingmachines stock can't be higher then it max number of products!`,
           });
         } else if (
           req.body.stock &&
+          !req.body.maxNumberOfProducts &&
           (isNaN(req.body.stock) ||
             Number(req.body.stock) > Number(vendingMachine.maxNumberOfProducts))
         ) {
@@ -361,9 +363,11 @@ exports.update = async (req, res) => {
           });
         } else if (
           req.body.maxNumberOfProducts &&
+          !req.body.stock &&
           (isNaN(req.body.maxNumberOfProducts) ||
             Number(req.body.maxNumberOfProducts) < Number(vendingMachine.stock))
         ) {
+          console.log("test3");
           return res.status(400).send({
             message: `the vendingmachines stock can't be higher then it max number of products!`,
           });
