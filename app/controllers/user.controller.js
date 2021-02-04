@@ -480,6 +480,7 @@ exports.update = async (req, res) => {
   console.log("update2");
 
   if (req.body.permissions) {
+    console.log("update3");
     let permissionsRequest = JSON.parse(req.body.permissions);
     let permissionsDoNotMatch = false;
     for (let i = 0; i < permissionsRequest.length; i++) {
@@ -488,12 +489,13 @@ exports.update = async (req, res) => {
         i = permissionsRequest.length;
       }
     }
+    console.log("update4");
     if (permissionsDoNotMatch) {
       return res.status(400).send({
         message: "The user permissions do not match with known permissions",
       });
     } else {
-      let authUserPermission = JSON.parse(req.authUser.permissions);
+      let authUserPermission = req.authUser.permissions;
       let ToHighPermissions = false;
       console.log(authUserPermission);
       console.log(permissionsRequest);
