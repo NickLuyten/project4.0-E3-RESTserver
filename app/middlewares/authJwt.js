@@ -115,6 +115,7 @@ hasPermission = (permission, checkIfUser = 0, checkifUserInCompany = 0) => {
       }
       User.findByPk(decoded.id).then((user) => {
         req.authUser = user;
+        req.authUser.permissions = JSON.parse(req.authUser.permissions);
         if (checkifUserInCompany) {
           if (req.authUser.companyId == req.params.id) {
             next();
@@ -127,15 +128,17 @@ hasPermission = (permission, checkIfUser = 0, checkifUserInCompany = 0) => {
             return;
           }
         }
-        if (user.permissions.includes(permission)) {
+        console.log(req.authUser.permissions);
+        console.log(permission);
+        if (req.authUser.permissions.includes(permission)) {
           next();
         } else {
           let alternatif = permission.replace("_OWN", "");
-          if (user.permissions.includes(alternatif)) {
+          if (req.authUser.permissions.includes(alternatif)) {
             next();
           } else {
             alternatif = alternatif.replace("_COMPANY", "");
-            if (user.permissions.includes(alternatif)) {
+            if (req.authUser.permissions.includes(alternatif)) {
               next();
             } else {
               return res
