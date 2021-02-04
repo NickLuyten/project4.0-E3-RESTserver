@@ -393,6 +393,8 @@ exports.findOne = (req, res) => {
 
 // Update a user
 exports.update = async (req, res) => {
+  const id = req.params.id;
+
   console.log("update");
   let validationMessages = validateUserFields(req, false);
   // If request not valid, return messages
@@ -402,6 +404,25 @@ exports.update = async (req, res) => {
 
   if (!req.body) {
     return res.status(400).send({ message: "geen data?" });
+  }
+  if (req.body.email) {
+    try {
+      let emailExist = await User.findOne({
+        where: {
+          email: req.body.email,
+        },
+      });
+      if (emailExist && emailExist.id != id) {
+        return res
+          .status(400)
+          .send({ message: "the email you want to update to already exist" });
+      }
+    } catch (err) {
+      return res.status(500).send({
+        message:
+          "Error  checking if email already exists when updating user  " + err,
+      });
+    }
   }
   if (req.body.password) {
     req.body.password = bcrypt.hashSync(req.body.password, 8);
@@ -502,7 +523,6 @@ exports.update = async (req, res) => {
 
   console.log("update4");
 
-  const id = req.params.id;
   User.findByPk(id).then((user) => {
     if (!user) {
       return res.status(400).send({
