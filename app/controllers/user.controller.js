@@ -188,7 +188,7 @@ exports.create = (req, res) => {
       req.body.permissions = JSON.stringify([]);
     }
     console.log("req.body.companyId : " + req.body.companyId);
-
+    console.log(authJwt.checkIfPermission(req, permission.USER_CREATE));
     if (!authJwt.checkIfPermission(req, permission.USER_CREATE)) {
       if (req.body.companyId != req.authUser.companyId) {
         return res.status(400).send({
@@ -224,7 +224,6 @@ exports.create = (req, res) => {
                 console.log("sanitizerLimitPerMonth");
                 //check permissions
                 let permissionsRequest = JSON.parse(req.body.permissions);
-                console.log(permissionsRequest);
                 let permissionsDoNotMatch = false;
 
                 for (let i = 0; i < permissionsRequest.length; i++) {
@@ -233,6 +232,7 @@ exports.create = (req, res) => {
                     i = permissionsRequest.length;
                   }
                 }
+                console.log("test");
                 if (permissionsDoNotMatch) {
                   return res.status(400).send({
                     message:
@@ -240,7 +240,7 @@ exports.create = (req, res) => {
                   });
                 } else {
                   //check if permissions are lower or the same as the user that created this user
-                  let authUserPermission = JSON.parse(req.authUser.permissions);
+                  let authUserPermission = req.authUser.permissions;
                   let ToHighPermissions = false;
                   console.log(authUserPermission);
                   console.log(permissionsRequest);
@@ -582,7 +582,9 @@ exports.updatePassword = async (req, res) => {
 
 // Find all users
 exports.findAll = (req, res) => {
-  console.log("user model : " + User);
+  console.log("user model : ");
+  console.log(req.authUser);
+  console.log(authJwt.checkIfPermission(req, permission.USER_READ));
   if (!authJwt.checkIfPermission(req, permission.USER_READ)) {
     User.findAll({
       where: {
