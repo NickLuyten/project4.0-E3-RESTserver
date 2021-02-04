@@ -435,7 +435,7 @@ exports.updateApiKey = async (req, res) => {
         }
       }
       vendingMachine.apiKey = uuidv4();
-      vendingMachine.update(vendingMachine).then((updatedVendingMachine) => {
+      vendingMachine.save().then((updatedVendingMachine) => {
         if (!updatedVendingMachine) {
           return res.status(400).send({
             message: `Cannot updated vending machine with id=${id}`,
