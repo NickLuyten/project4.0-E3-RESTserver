@@ -205,33 +205,20 @@ exports.findAll = async (req, res) => {
   }
 };
 exports.findAllTypesWithCompanyId = async (req, res) => {
-  if (!authJwt.checkIfPermission(req, permission.TYPE_READ)) {
-    Type.findAll({
-      where: {
-        companyId: req.authUser.companyId,
-      },
+  Type.findAll({
+    where: {
+      companyId: req.params.id,
+    },
+  })
+    .then((types) => {
+      if (!types) return res.status(400).send({ message: "No type found" });
+      return res.send(returnTypes(types));
     })
-      .then((types) => {
-        if (!types) return res.status(400).send({ message: "No type found" });
-        return res.send(returnTypes(types));
-      })
-      .catch((err) => {
-        return res
-          .status(500)
-          .send({ message: err.message || "Error retrieving types" });
-      });
-  } else {
-    Type.findAll()
-      .then((types) => {
-        if (!types) return res.status(400).send({ message: "No type found" });
-        return res.send(returnTypes(types));
-      })
-      .catch((err) => {
-        return res
-          .status(500)
-          .send({ message: err.message || "Error retrieving types" });
-      });
-  }
+    .catch((err) => {
+      return res
+        .status(500)
+        .send({ message: err.message || "Error retrieving types" });
+    });
 };
 
 // Delete a type with the specified id in the request
