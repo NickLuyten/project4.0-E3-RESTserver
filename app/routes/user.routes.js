@@ -14,7 +14,7 @@ module.exports = (app) => {
     users.create
   );
   // Create a new admin
-  router.post("/admin", users.createAdmin);
+  // router.post("/admin", users.createAdmin);
 
   // Authenticate user
   router.post("/authenticate", users.authenticate);
